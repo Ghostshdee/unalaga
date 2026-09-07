@@ -53,13 +53,80 @@
     <!-- ═══════════════ MAIN ═══════════════ -->
     <main class="main">
 
-      <!-- Захиалга үүсгэх зурвас (товч зөвхөн харагдана — modal 2-р алхамд) -->
-      <section class="order-prompt">
-        <p class="order-prompt-text">Өнөөдөр хаашаа явах вэ?</p>
-        <button class="btn btn-primary" type="button">+ Шинэ захиалга үүсгэх</button>
+      <!-- ═══════════════ HERO — Монголын тал, зам ═══════════════
+           Далбааны 3 өнгө: гүн хөх тэнгэр, алтан нар, улаан ирмэг.
+           Давхарга бүр data-depth-тэй — app.js хулгана/скроллоор хөдөлгөнө.
+           JS байхгүй эсвэл prefers-reduced-motion үед хөдөлгөөнгүй зурагтай. -->
+      <section class="hero">
+        <div class="hero-scene" aria-hidden="true">
+          <div class="hl hl--sky" data-depth="0"></div>
+
+          <div class="hl hl--sun" data-depth="4">
+            <svg viewBox="0 0 1200 420" preserveAspectRatio="xMidYMax slice">
+              <defs>
+                <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%"   stop-color="#F5C518" stop-opacity=".85"/>
+                  <stop offset="38%"  stop-color="#F5C518" stop-opacity=".22"/>
+                  <stop offset="100%" stop-color="#F5C518" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <circle cx="790" cy="198" r="176" fill="url(#sunGlow)"/>
+              <circle cx="790" cy="198" r="44"  fill="#F7D64A"/>
+            </svg>
+          </div>
+
+          <div class="hl hl--far" data-depth="8">
+            <svg viewBox="0 0 1200 420" preserveAspectRatio="xMidYMax slice">
+              <path d="M0,240 L150,176 L268,222 L410,158 L560,214 L700,166 L860,220 L1010,172 L1200,224 L1200,420 L0,420 Z"
+                    fill="#12376E" opacity=".85"/>
+            </svg>
+          </div>
+
+          <div class="hl hl--mid" data-depth="14">
+            <svg viewBox="0 0 1200 420" preserveAspectRatio="xMidYMax slice">
+              <path d="M0,278 L180,236 L360,272 L540,232 L700,268 L900,238 L1090,274 L1200,254 L1200,420 L0,420 Z"
+                    fill="#0B2549"/>
+            </svg>
+          </div>
+
+          <!-- Зам — нар руу хөтөлнө. Алтан зураас скроллоор доошоо урсана. -->
+          <div class="hl hl--road" data-depth="20">
+            <svg viewBox="0 0 1200 420" preserveAspectRatio="xMidYMax slice">
+              <defs>
+                <clipPath id="roadClip">
+                  <path d="M752,268 L812,268 L1290,420 L430,420 Z"/>
+                </clipPath>
+              </defs>
+              <path d="M752,268 L812,268 L1290,420 L430,420 Z" fill="#071B36"/>
+              <g clip-path="url(#roadClip)" fill="#F5C518" opacity=".92">
+                <g class="road-dashes">
+                  <path d="M782,272 L786,272 L793,283 L787,283 Z"/>
+                  <path d="M792,296 L800,296 L811,314 L799,314 Z"/>
+                  <path d="M806,328 L820,328 L837,356 L817,356 Z"/>
+                  <path d="M824,372 L846,372 L869,408 L839,408 Z"/>
+                  <path d="M846,424 L872,424 L900,470 L864,470 Z"/>
+                </g>
+              </g>
+            </svg>
+          </div>
+
+          <div class="hl hl--grass" data-depth="32">
+            <svg viewBox="0 0 1200 420" preserveAspectRatio="xMidYMax slice">
+              <path d="M0,420 L0,330 C104,312 176,358 268,336 C356,314 414,354 470,344 L470,420 Z" fill="#050F22"/>
+              <path d="M1200,420 L1200,318 C1132,306 1092,344 1042,332 L1042,420 Z" fill="#050F22"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="hero-inner">
+          <p class="hero-eyebrow">Хөдөө орон нутгийн тээвэр</p>
+          <h1 class="hero-title">Хаашаа явах вэ?</h1>
+          <p class="hero-sub">Сул суудал, хоосон ачааны машиныг тээвэр хэрэгтэй хүнтэй холбоно.</p>
+          <button class="btn btn-primary hero-cta" type="button">+ Шинэ захиалга үүсгэх</button>
+        </div>
       </section>
 
-      <h1 class="section-title">Сүүлийн зарууд</h1>
+      <h2 class="section-title">Сүүлийн зарууд</h2>
 
       <div class="post-list">
 
@@ -390,5 +457,6 @@
     </main>
   </div>
 
+  <script src="app.js" defer></script>
 </body>
 </html>

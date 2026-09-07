@@ -27,6 +27,19 @@
   --gold:       #C68B14;  /* итгэл: од, ✓ баталгаа, чиглэлийн төгсгөл */
   --gold-wash:  #FBF2DE;
 
+  /* ── Далбааны өнгө — ЗӨВХӨН hero-д (DESIGN §2, §14) ──────────
+     Feed дэх өнгөний утга (улаан = хэрэгцээ, алт = итгэл) хэвээр.
+     Эдгээр нь зөвхөн дээд талын дүр зурагт зориулсан тод хувилбар. */
+  --sky-top:    #061731;  /* шөнийн тэнгэр — hero-гийн дээд тал */
+  --sky-mid:    #0F3D7C;  /* далбааны хөх */
+  --sky-low:    #1B5EA8;  /* тэнгэрийн хаяа */
+  --flag-gold:  #F5C518;  /* нар, замын зураас, hero-гийн товч */
+  --flag-gold-hi: #FFD942;/* тэр товчны hover */
+  --flag-red:   #C4272F;  /* hero-гийн хажуугийн зурвас */
+  --on-dark-soft: rgba(255, 255, 255, 0.82);   /* бараан дээрх дэд текст */
+  --hero-veil-top: rgba(6, 23, 49, 0.10);
+  --hero-veil-bot: rgba(5, 15, 34, 0.72);
+
   --white:      #FFFFFF;  /* өнгөт дэвсгэр дээрх текст */
 
   /* Badge-ийн төрлийн өнгө (DESIGN §5) */
@@ -318,30 +331,92 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 
 /* Нэг баганат жагсаалт — замын хуудсыг дээрээс доош гүйлгэн уншина
    (CLAUDE.md §2: Facebook бол лавлах загвар — feed нь нэг багана) */
-.order-prompt,
 .section-title,
 .post-list {
   max-width: 580px;
   margin-inline: auto;
 }
 
-/* Захиалга үүсгэх зурвас */
-.order-prompt {
+/* ═══════════════ HERO (DESIGN §14) ═══════════════
+   Далбааны өнгөт тал ба зам. Давхарга бүрийг app.js хулгана/скроллоор
+   хөдөлгөнө. Хөдөлгөөн ЗӨВХӨН энд — доорх feed тайван, хурдан хэвээр. */
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  padding: var(--space-4) var(--space-5);
+  align-items: flex-end;
+  min-height: 400px;
   margin-bottom: var(--space-6);
-  background: var(--surface);
-  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
 }
-.order-prompt-text {
-  font-size: var(--text-h2);
-  font-weight: 600;
+
+.hero-scene { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+.hl {
+  position: absolute;
+  inset: -6% -4%;
+  width: 108%;
+  height: 112%;
+  will-change: transform;
 }
+.hl svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.hl--sky {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 54%, var(--sky-low) 100%);
+}
+/* Доошоо бараавтар — цагаан текст уншигдана */
+.hero-scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--hero-veil-top) 0%, transparent 32%, var(--hero-veil-bot) 100%);
+}
+
+/* Замын алтан зураас — app.js скроллоор --road-shift-ийг өөрчилнө */
+.road-dashes {
+  transform: translateY(var(--road-shift, 0px));
+  will-change: transform;
+}
+
+/* Улаан босоо зураас — далбааны хошууны улаан талын дурсгал */
+.hero-inner {
+  position: relative;
+  max-width: 30rem;
+  margin: 0 0 var(--space-5) var(--space-5);
+  padding-left: var(--space-4);
+  border-left: 3px solid var(--flag-red);
+}
+.hero-eyebrow {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-tiny);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--flag-gold);
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(32px, 5.2vw, 46px);
+  line-height: 1.04;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--white);
+}
+.hero-sub {
+  margin: var(--space-3) 0 var(--space-5);
+  max-width: 26rem;
+  color: var(--on-dark-soft);
+}
+/* Гол үйлдэл — далбааны алт. Гүн хөх дэвсгэр дээр хамгийн тод. */
+.hero-cta {
+  background: var(--flag-gold);
+  color: var(--ink);
+}
+.hero-cta:hover { background: var(--flag-gold-hi); }
 
 .section-title {
   font-size: var(--text-h1);
@@ -654,6 +729,15 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   .sidebar { display: none; }  /* доод navigation bar 3-р алхамд */
 
   .main { padding: var(--space-4) var(--space-3); }
+
+  .hero { min-height: 320px; margin-bottom: var(--space-5); }
+  .hero-inner {
+    max-width: none;
+    margin: 0 var(--space-4) var(--space-4) var(--space-4);
+    padding-left: var(--space-3);
+  }
+  .hero-sub { margin: var(--space-2) 0 var(--space-4); font-size: var(--text-small); }
+  .hero-cta { width: 100%; }
 
   /* "Холбогдох" товч мобайлд бүтэн өргөн (DESIGN §8) */
   .post-person { flex-wrap: wrap; }
