@@ -102,30 +102,36 @@
 
 ## 3. Үсгийн фонт
 
-Одоо Inter хэрэглэж байгаа. Inter нь сайн фонт боловч бүх сайтад
-байдаг тул өвөрмөц зүйл өгөхгүй.
-
 ```html
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 ```
 
 ```css
---font-display: 'Unbounded', system-ui, sans-serif;
---font-body: 'Golos Text', system-ui, sans-serif;
+--font-display: 'Oswald', 'Arial Narrow', system-ui, sans-serif;
+--font-body:    'Onest', system-ui, sans-serif;
 ```
 
-- **Unbounded** — зөвхөн 2 газар: лого, картын чиглэлийн нэр.
-  Өргөн, геометр хэлбэртэй, өвөрмөц.
-- **Golos Text** — бусад бүх текст. Кирилл үсэгт зориулж
-  зохиогдсон, жижиг хэмжээнд уншихад маш сайн.
+- **Oswald** — зөвхөн 3 газар: лого, картын чиглэлийн нэр, үнэ.
+  Condensed (нарийн, өндөр) тул **замын тэмдэг, замын хуудасны аяс**
+  өгнө — §1-ийн гол санаатай яг таарна. Мөн урт газрын нэр
+  (Баян-Өлгий, «Сэлэнгэ, Сайхан сум») нэг мөрөнд багтана.
+- **Onest** — бусад бүх текст. Кирилл үсэгт зориулж зохиогдсон,
+  жижиг хэмжээнд уншихад маш сайн.
 
-Хэрэв Unbounded ачаалагдахгүй бол Golos Text-ийн 700 жинг
-ашиглана.
+Хэрэв Oswald ачаалагдахгүй бол `Arial Narrow` орлоно — тэр ч бас
+condensed тул зохион байгуулалт эвдэрдэггүй.
+
+> [!note] Түүх
+> Эхлээд Inter байсныг Unbounded + Golos Text болгосон. Гэвч
+> Unbounded нь өргөн, геометр тул кирилл том үсэгт («УЛААНБААТАР»)
+> тоглоомонцог, тансаг биш харагдсан. 2026-09-07-нд Oswald + Onest
+> болгов. Дүрэм хэвээр: display фонт **зөвхөн 2-3 газар**.
 
 ### Хэмжээний шат
 
 ```css
---text-route:  28px;  /* чиглэлийн нэр, Unbounded 600 */
+--text-route:  34px;  /* чиглэлийн нэр, Oswald 600 (condensed тул том) */
+--text-price:  26px;  /* үнэ, Oswald 600 */
 --text-h1:     24px;
 --text-h2:     18px;
 --text-body:   15px;
@@ -133,7 +139,7 @@
 --text-tiny:   12px;
 ```
 
-Мобайлд `--text-route` нь 22px болно.
+Мобайлд `--text-route` 27px, `--text-price` 23px болно.
 
 Мөрийн өндөр: гарчигт 1.2, урт текстэд 1.6.
 

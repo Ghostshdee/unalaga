@@ -34,12 +34,16 @@
   --badge-cargo:     #2F6B3D;
   --badge-moving:    #8C4A2F;
 
-  /* ── Фонт ───────────────────────────────────────────────── */
-  --font-display: 'Unbounded', system-ui, sans-serif;  /* зөвхөн лого + чиглэлийн нэр */
-  --font-body:    'Golos Text', system-ui, sans-serif; /* бусад бүх текст */
+  /* ── Фонт (DESIGN §3) ───────────────────────────────────────
+     Oswald  — condensed, замын тэмдгийн аяс. Зөвхөн лого, чиглэлийн нэр, үнэ.
+               Нарийн тул урт газрын нэр (Баян-Өлгий, Сэлэнгэ Сайхан сум) багтана.
+     Onest   — бусад бүх текст. Кирилл үсэгт зориулж зохиогдсон, жижигдээ сайн. */
+  --font-display: 'Oswald', 'Arial Narrow', system-ui, sans-serif;
+  --font-body:    'Onest', system-ui, sans-serif;
 
   /* ── Үсгийн хэмжээний шат ───────────────────────────────── */
-  --text-route:  28px;  /* чиглэлийн нэр (Unbounded 600) */
+  --text-route:  34px;  /* чиглэлийн нэр (Oswald 600 — condensed тул томроов) */
+  --text-price:  26px;  /* үнэ (Oswald 600) */
   --text-h1:     24px;
   --text-h2:     18px;
   --text-body:   15px;
@@ -170,8 +174,9 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   flex-shrink: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--text-h2);
-  letter-spacing: 0.04em;
+  /* Oswald condensed тул Unbounded-оос нарийн — хэмжээг нэмж жинг барив */
+  font-size: var(--text-h1);
+  letter-spacing: 0.05em;
   color: var(--white);
 }
 
@@ -374,7 +379,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 16 / 7;
   padding: var(--space-4);
   overflow: hidden;
   border-bottom: 3px solid var(--gold);
@@ -420,8 +425,8 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 .post-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-5);
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
   flex: 1;
 }
 
@@ -474,7 +479,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   display: grid;
   grid-template-columns: 16px 1fr;
   gap: var(--space-3);
-  margin: var(--space-3) 0 var(--space-4);
+  margin: var(--space-2) 0 var(--space-3);
 }
 .route-rail { position: relative; }
 .route-rail::before {           /* босоо тасархай шугам — цэгээс цэг хүртэл */
@@ -510,13 +515,13 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--text-route);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  line-height: 1.05;
+  letter-spacing: 0.005em;
   text-transform: uppercase;
   color: var(--ink);
   word-break: break-word;
 }
-.route-from { margin-bottom: var(--space-1); }
+.route-from { margin-bottom: 0; }
 
 /* Хоёр хотын хооронд — ойролцоо зай ба хугацаа (DESIGN §1) */
 .route-gap {
@@ -544,19 +549,22 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 }
 .post-price {
   flex-shrink: 0;
-  font-size: var(--text-h1);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);   /* Oswald — чиглэлийн нэртэй нэг гэр бүл */
+  font-size: var(--text-price);
+  font-weight: 600;
+  letter-spacing: 0.005em;
   color: var(--ink);
   text-align: right;
 }
-/* Хоёр хэсэгтэй үнэ (хүн / бараа) — жижиг, багана болно */
+/* Хоёр хэсэгтэй үнэ (хүн / бараа) — жижиг тул уншихад хялбар body фонтоор */
 .post-price-split {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  font-family: var(--font-body);
   font-size: var(--text-small);
   font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.45;
 }
 
@@ -634,7 +642,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 
 /* ═══════════════ МОБАЙЛ — түр зуурын (доод navbar нь 3-р алхам) ═══════════════ */
 @media (max-width: 640px) {
-  :root { --text-route: 22px; }
+  :root { --text-route: 27px; --text-price: 23px; }
 
   .header {
     gap: var(--space-3);
