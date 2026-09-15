@@ -79,6 +79,15 @@
   /* ── Сүүдэр (нэг л төрөл — зөвхөн хөвж байгаа зүйлд) ─────── */
   --shadow: 0 1px 2px rgba(11, 37, 69, 0.04),
             0 4px 12px rgba(11, 37, 69, 0.06);
+  /* Modal нь хамгийн өндөрт хөвнө — арай гүн сүүдэр */
+  --shadow-lift: 0 4px 10px rgba(11, 37, 69, 0.10),
+                 0 24px 60px rgba(11, 37, 69, 0.22);
+
+  /* ── Modal / форм ───────────────────────────────────────── */
+  --overlay:    rgba(11, 37, 69, 0.52);  /* modal-ын ард бүдгэрүүлэх */
+  --ink-faint:  #93A2B3;                 /* placeholder текст */
+  /* select-ийн доош сум — data-URI, нэмэлт хүсэлтгүй */
+  --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%235A6B7F' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   --transition: 0.18s ease;
 
@@ -716,6 +725,267 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 }
 
 /* ═══════════════ МОБАЙЛ — түр зуурын (доод navbar нь 3-р алхам) ═══════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL — Шинэ захиалга (BUILD.md §4)
+   Сүүдэр ЗӨВХӨН энд — хөвж байгаа зүйл (DESIGN §4).
+   Мобайлд доороос дээш гарах bottom sheet (DESIGN §8).
+   ═══════════════════════════════════════════════════════════════════ */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+}
+.modal[hidden] { display: none; }
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay);
+}
+
+.modal-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: min(760px, calc(100vh - var(--space-6)));
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+}
+
+/* ── Толгой ── */
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--line);
+}
+.modal-title {
+  font-size: var(--text-h2);
+  font-weight: 700;
+}
+.modal-x {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: calc(var(--space-3) * -1);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-muted);
+  transition: background var(--transition), color var(--transition);
+}
+.modal-x:hover { background: var(--paper); color: var(--ink); }
+
+/* ── Их бие — урт бол дотроо гүйнэ ── */
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── Талбарын суурь ── */
+.fld { border: 0; padding: 0; margin: 0; min-width: 0; }
+.fld-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--ink);
+}
+.fld-sub {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+.fld-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.fld-cell { min-width: 0; }
+
+/* Алдааны текст — талбарын шууд доор (BUILD §4) */
+.fld-err {
+  margin-top: var(--space-1);
+  font-size: var(--text-small);
+  color: var(--red);
+}
+.fld-note {
+  margin-top: var(--space-2);
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+
+/* ── Оролтууд ── */
+.inp {
+  width: 100%;
+  min-height: 44px;                 /* хүрэх талбай — DESIGN §8 */
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--ink);
+  transition: border-color var(--transition);
+}
+.inp:hover { border-color: var(--line-2); }
+.inp:focus { border-color: var(--blue); outline: none; }
+.inp::placeholder { color: var(--ink-faint); }
+textarea.inp { resize: vertical; line-height: 1.6; }
+select.inp { appearance: none; background: var(--surface) var(--caret) no-repeat right var(--space-3) center; padding-right: var(--space-6); }
+.inp-narrow { max-width: 140px; }
+
+/* Буруу бөглөсөн талбар — улаан хүрээ (BUILD §4) */
+.inp.is-bad { border-color: var(--red); }
+.inp.is-bad:focus { border-color: var(--red); }
+
+/* Үнэ — ард нь ₮ */
+.inp-money { position: relative; }
+.inp-money .inp { padding-right: var(--space-6); }
+.inp-suffix {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+
+/* ── Сонголтын карт (үүрэг, тээврийн төрөл) ── */
+.pick { display: grid; gap: var(--space-2); }
+.pick-2 { grid-template-columns: 1fr 1fr; }
+.pick-grid { grid-template-columns: 1fr 1fr; }
+
+.pick-card {
+  position: relative;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.pick-card input { position: absolute; opacity: 0; pointer-events: none; }
+.pick-in {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  transition: border-color var(--transition), background var(--transition);
+}
+.pick-in .ic { color: var(--ink-muted); transition: color var(--transition); }
+.pick-in b { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
+.pick-in i { font-style: normal; font-size: var(--text-small); color: var(--ink-muted); }
+.pick-card:hover .pick-in { border-color: var(--line-2); }
+
+/* Сонгогдсон — хөх хүрээ, цайвар хөх дэвсгэр */
+.pick-card input:checked + .pick-in {
+  border-color: var(--blue);
+  background: var(--blue-wash);
+}
+.pick-card input:checked + .pick-in .ic { color: var(--blue); }
+.pick-card input:focus-visible + .pick-in {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Хараахан ажиллахгүй сонголт */
+.pick-card.is-soon { cursor: default; }
+.pick-card.is-soon .pick-in { background: var(--paper); }
+.pick-card.is-soon b { color: var(--ink-muted); }
+.soon {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-style: normal;
+  font-size: var(--text-tiny);
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* ── Зураг сонгох ── */
+.file-drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-3);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius-md);
+  color: var(--ink-muted);
+  font-size: var(--text-body);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition);
+}
+.file-drop:hover { border-color: var(--blue); color: var(--blue); }
+.file-drop:focus-within { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.file-preview {
+  position: relative;
+  margin-top: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.file-preview[hidden] { display: none; }
+.file-preview img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.file-clear {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--scrim);
+  color: var(--white);
+  font-size: var(--text-small);
+  font-weight: 500;
+}
+
+/* ── Хөл ── */
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+.btn-ghost:hover { background: var(--paper); }
+
+/* Modal нээлттэй үед хуудас доогуураа гүйхгүй */
+body.is-locked { overflow: hidden; }
 @media (max-width: 640px) {
   :root { --text-route: 27px; --text-price: 23px; }
 
@@ -743,4 +1013,24 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   .post-person { flex-wrap: wrap; }
   .person-main { flex-basis: calc(100% - 56px); }
   .btn-contact { width: 100%; }
+
+  /* ── Modal → доороос дээш гарах bottom sheet (DESIGN §8) ── */
+  .modal { place-items: end center; padding: 0; }
+  .modal-sheet {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .modal-head,
+  .modal-foot { padding-inline: var(--space-4); }
+  .modal-body { padding: var(--space-4); gap: var(--space-4); }
+
+  /* Хоёр баганат мөрүүд нэг багана болно — хуруунд өргөн талбай */
+  .fld-row { grid-template-columns: 1fr; }
+  .pick-2 { grid-template-columns: 1fr; }
+  .inp-narrow { max-width: none; }
+
+  /* Хөл наалдаж, доод талд үргэлж харагдана */
+  .modal-foot { position: sticky; bottom: 0; }
+  .modal-foot .btn { flex: 1; }
 }
