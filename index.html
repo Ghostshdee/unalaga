@@ -24,12 +24,28 @@
   <header class="header">
     <a class="logo" href="./">УНАЛАГА.МН</a>
 
-    <form class="search" role="search" action="#">
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m21 21-5.4-5.4"/></svg>
-      <input class="search-input" type="search" placeholder="Чиглэл, жолооч хайх..." aria-label="Хайх">
+    <!-- Хайлт — компьютерт header дотор, мобайлд дэлгэц дүүрэн (DESIGN §8).
+         .search-panel нь зөвхөн мобайлын дэлгэц дүүрэн үед харагдана. -->
+    <form class="search" id="searchForm" role="search" action="#">
+      <div class="search-field">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m21 21-5.4-5.4"/></svg>
+        <input class="search-input" id="searchInput" type="search" placeholder="Чиглэл, жолооч хайх..." aria-label="Хайх" autocomplete="off">
+        <button class="search-close" type="button" data-close-search aria-label="Хайлт хаах">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="search-panel">
+        <p class="search-label">Түгээмэл газар</p>
+        <div class="search-places" id="searchPlaces"></div>
+        <p class="search-count" id="searchCount" aria-live="polite"></p>
+        <button class="btn btn-primary search-done" type="submit">Зар харах</button>
+      </div>
     </form>
 
     <div class="header-actions">
+      <button class="icon-btn search-open" type="button" aria-label="Хайх" data-open-search>
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m21 21-5.4-5.4"/></svg>
+      </button>
       <button class="icon-btn" type="button" aria-label="Мэдэгдэл">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5a6 6 0 0 1 12 0c0 3.6 1.4 5 2 5.75H4c.6-.75 2-2.15 2-5.75Z"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0"/></svg>
         <span class="notif-count">3</span>
@@ -131,6 +147,35 @@
       </section>
 
       <h2 class="section-title">Сүүлийн зарууд</h2>
+
+      <!-- Шүүлтүүр — хэн нийтэлсэн, ямар тээвэр. app.js картын badge-аас уншина. -->
+      <div class="feed-tools">
+        <div class="seg" role="radiogroup" aria-label="Хэний зар">
+          <label class="seg-item"><input type="radio" name="who" value="all" checked><span>Бүгд</span></label>
+          <label class="seg-item"><input type="radio" name="who" value="driver"><span>Жолооч</span></label>
+          <label class="seg-item"><input type="radio" name="who" value="passenger"><span>Унаа хэрэгтэй</span></label>
+        </div>
+        <label class="sr-only" for="kindFilter">Тээврийн төрөл</label>
+        <select class="inp kind-filter" id="kindFilter">
+          <option value="all">Бүх төрөл</option>
+          <option value="passenger">Хүн тээвэр</option>
+          <option value="livestock">Мал тээвэр</option>
+          <option value="cargo">Бараа тээвэр</option>
+          <option value="moving">Гэр нүүлгэх</option>
+        </select>
+      </div>
+
+      <p class="feed-count" id="feedCount" aria-live="polite" hidden></p>
+
+      <!-- Хоосон үед юу хийхийг заана (DESIGN §7) -->
+      <div class="feed-empty" id="feedEmpty" hidden>
+        <p class="feed-empty-title">Энэ чиглэлд одоогоор зар алга.</p>
+        <p class="feed-empty-text">Та захиалга үүсгэвэл жолооч нар харах болно.</p>
+        <div class="feed-empty-actions">
+          <button class="btn btn-primary" type="button" data-open-order>Захиалга үүсгэх</button>
+          <button class="btn btn-ghost" type="button" data-clear-filters>Шүүлтүүр арилгах</button>
+        </div>
+      </div>
 
       <div class="post-list">
 
@@ -460,6 +505,17 @@
       </div>
     </main>
   </div>
+
+  <!-- ═══════════════ ДООД ЦЭС — зөвхөн мобайлд (DESIGN §8) ═══════════════
+       640px-ээс доош sidebar-ын оронд. «Хайх» нь дэлгэц дүүрэн хайлт,
+       «Захиалга» нь modal нээнэ. Бусад нь sidebar-тай адил одоохондоо ажиллахгүй. -->
+  <nav class="bottom-nav" aria-label="Доод цэс">
+    <a class="bnav-link is-active" href="./" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7"/><path d="M5.5 9.4V20h13V9.4"/></svg>Нүүр</a>
+    <button class="bnav-link" type="button" data-open-search><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m21 21-5.4-5.4"/></svg>Хайх</button>
+    <button class="bnav-link bnav-order" type="button" data-open-order><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Захиалга</button>
+    <a class="bnav-link" href="#"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Зураг</a>
+    <a class="bnav-link" href="#"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a>
+  </nav>
 
 
   <!-- ═══════════════ MODAL — Шинэ захиалга (BUILD.md §4) ═══════════════

@@ -1,8 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════
    Уналага.мн — app.js
-   Одоо: hero-гийн parallax (DESIGN §14).
-   Дараа (BUILD.md §7, 2-3-р алхам): openModal, closeModal, fillAimagSelects,
-   syncRoleUI, validateForm, createPost, savePost, loadPosts, showToast.
+   1. Hero-гийн parallax (DESIGN §14)
+   2. Modal: openModal, closeModal, fillAimagSelects, syncRoleUI, validateForm
+   3. Пост: createPost, savePost, loadPosts, showToast (localStorage)
+   4. Хайлт, шүүлтүүр: applyFilters, openSearch (мобайлд дэлгэц дүүрэн)
    Гадны сан ашиглахгүй (CLAUDE.md §8).
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -87,7 +88,6 @@ document.addEventListener('DOMContentLoaded', initParallax);
 /* ═══════════════════════════════════════════════════════════════════
    MODAL — «Шинэ захиалга үүсгэх» (BUILD.md §4, 2-р алхам)
    Нээх/хаах · аймаг дүүргэх · жолооч↔захиалагч · форм шалгах.
-   3-р алхамд: постыг үнэхээр үүсгэх, localStorage, toast.
    ═══════════════════════════════════════════════════════════════════ */
 
 /* Монгол улсын 21 аймаг + нийслэл (BUILD.md §4) */
@@ -326,16 +326,462 @@ function initModal() {
   form.addEventListener('input', clearErrorOnInput);
   form.addEventListener('change', clearErrorOnInput);
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  /* Mobile доод цэсийн «Захиалга» гэх мэт нэмэлт нээгчид */
+  for (const el of document.querySelectorAll('[data-open-order]')) {
+    el.addEventListener('click', openModal);
+  }
 
-    /* 3-р алхам: энд createPost() + savePost() + showToast() орно.
-       Одоогоор шалгалт өнгөрөөд modal хаагдана. */
-    const data = Object.fromEntries(new FormData(form).entries());
-    console.log('Захиалга (3-р алхамд пост болно):', data);
+  let busy = false;   /* зураг шахаж байх хооронд давхар дарахаас хамгаална */
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (busy || !validateForm()) return;
+    busy = true;
+
+    const post = await readForm(form);
+    const saved = savePost(post);
+    clearFilters();   /* шүүлтүүр идэвхтэй байсан ч шинэ зар заавал харагдана */
+    prependPost(post);
+
     closeModal();
+    resetForm(form);
+    showToast(saved ? 'Захиалга нийтлэгдлээ' : 'Захиалга нийтлэгдлээ. Зураг хэт том тул хадгалагдсангүй');
+    busy = false;
   });
 }
 
 document.addEventListener('DOMContentLoaded', initModal);
+
+/* ═══════════════════════════════════════════════════════════════════
+   ПОСТ ҮҮСГЭХ — BUILD.md §4 «Илгээсний дараа», 3-р алхам
+   Формоос пост объект → localStorage → жагсаалтын хамгийн дээр карт.
+   Сервер одоохондоо байхгүй тул зөвхөн энэ browser-т хадгалагдана.
+   ═══════════════════════════════════════════════════════════════════ */
+
+const STORAGE_KEY = 'unalaga_posts';
+const MAX_POSTS = 30;          /* localStorage ~5MB — хуучныг нь хасна */
+const PHOTO_MAX_W = 640;       /* зургийг шахаж хадгална — 2G/3G, хадгалах зай */
+
+const WEEKDAYS = ['Ням', 'Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба'];
+
+/* Машины зургийг жижигрүүлж JPEG data URL болгоно. blob: хаяг хуудас
+   дахин ачаалахад үхдэг тул localStorage-д шууд текстээр хадгална. */
+function shrinkPhoto(file) {
+  return new Promise((resolve) => {
+    if (!file || !file.type || file.type.indexOf('image/') !== 0) return resolve('');
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, PHOTO_MAX_W / img.naturalWidth);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.naturalWidth * scale);
+      canvas.height = Math.round(img.naturalHeight * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(''); };
+    img.src = url;
+  });
+}
+
+/* Формын утгуудаас хадгалах пост объект үүсгэнэ */
+async function readForm(form) {
+  const fd = new FormData(form);
+  const role = fd.get('role') === 'passenger' ? 'passenger' : 'driver';
+  const isDriver = role === 'driver';
+  const photoInput = document.getElementById('fPhoto');
+
+  return {
+    id: Date.now(),
+    createdAt: Date.now(),
+    role: role,
+    kind: fd.get('kind') || 'passenger',
+    from: fd.get('from'),
+    to: fd.get('to'),
+    date: fd.get('date'),
+    time: fd.get('time'),
+    seats: Number(fd.get('seats')) || 1,
+    price: isDriver && fd.get('price') ? Number(fd.get('price')) : 0,
+    note: String(fd.get('note') || '').trim(),
+    photo: isDriver ? await shrinkPhoto(photoInput.files && photoInput.files[0]) : ''
+  };
+}
+
+function readPosts() {
+  try {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    return [];   /* эвдэрсэн өгөгдөл эсвэл хаалттай storage — хоосон гэж үзнэ */
+  }
+}
+
+/* localStorage-д хамгийн эхэнд нэмнэ. Зай хүрэлцэхгүй бол зураггүйгээр
+   дахин оролдоно. Буцаах утга: зурагтай нь бүрэн хадгалагдсан эсэх. */
+function savePost(post) {
+  const list = readPosts();
+  list.unshift(post);
+  list.length = Math.min(list.length, MAX_POSTS);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    return true;
+  } catch (err) {
+    if (!post.photo) return false;
+    list[0] = Object.assign({}, post, { photo: '' });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch (err2) { /* storage хаалттай */ }
+    return false;
+  }
+}
+
+/* «4-р сарын 27, Даваа · 08:00» — жишээ картуудтай ижил хэлбэр */
+function formatWhen(date, time) {
+  const parts = String(date).split('-').map(Number);
+  if (parts.length !== 3) return '';
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  const text = parts[1] + '-р сарын ' + parts[2] + ', ' + WEEKDAYS[d.getDay()];
+  return time ? text + ' · ' + time : text;
+}
+
+/* «Дөнгөж сая», «5 минутын өмнө», «3 цагийн өмнө», «2 өдрийн өмнө» */
+function formatAgo(ts) {
+  const min = Math.floor((Date.now() - ts) / 60000);
+  if (min < 1) return 'Дөнгөж сая';
+  if (min < 60) return min + ' минутын өмнө';
+  const h = Math.floor(min / 60);
+  if (h < 24) return h + ' цагийн өмнө';
+  return Math.floor(h / 24) + ' өдрийн өмнө';
+}
+
+/* 45000 → «45 000 ₮» */
+function formatPrice(n) {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₮';
+}
+
+/* Жижиг туслах — элемент үүсгээд класс, текст онооно */
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+/* Пост объектоос картын DOM үүсгэнэ. innerHTML биш textContent —
+   хэрэглэгчийн бичсэн тэмдэглэлд HTML орсон ч код болж ажиллахгүй. */
+function createPost(post) {
+  const isDriver = post.role === 'driver';
+  const card = el('article', 'post-card is-mine');
+  card.dataset.postId = post.id;
+
+  /* Машины зураг — жолооч зураг оруулсан үед л (BUILD §2) */
+  if (isDriver && post.photo) {
+    const photo = el('div', 'post-photo veh-sedan');
+    const img = el('img');
+    img.src = post.photo;
+    img.alt = 'Жолоочийн машины зураг';
+    img.width = 600;
+    img.height = 338;
+    img.onerror = () => photo.classList.add('no-image');
+    photo.appendChild(img);
+    card.appendChild(photo);
+  }
+
+  const body = el('div', 'post-body');
+
+  /* Badge + хугацаа */
+  const head = el('div', 'post-head');
+  const badges = el('div', 'post-badges');
+  badges.appendChild(el('span', 'badge badge-passenger', 'Хүн тээвэр'));
+  if (!isDriver) badges.appendChild(el('span', 'badge badge-request', 'Унаа хэрэгтэй'));
+  head.appendChild(badges);
+  const time = el('span', 'post-time', formatAgo(post.createdAt));
+  time.dataset.ts = post.createdAt;
+  head.appendChild(time);
+  body.appendChild(head);
+
+  /* Чиглэл — картын хамгийн том элемент (DESIGN §1). Зай тооцоолох
+     өгөгдөл одоохондоо байхгүй тул route-gap-гүй. */
+  const route = el('div', 'post-route');
+  const rail = el('span', 'route-rail');
+  rail.setAttribute('aria-hidden', 'true');
+  rail.appendChild(el('i', 'route-dot route-dot-start'));
+  rail.appendChild(el('i', 'route-dot route-dot-end'));
+  const cities = el('div', 'route-cities route-cities-tight');
+  cities.appendChild(el('p', 'route-city route-from', post.from));
+  cities.appendChild(el('p', 'route-city route-to', post.to));
+  route.appendChild(rail);
+  route.appendChild(cities);
+  body.appendChild(route);
+
+  body.appendChild(el('p', 'post-when', formatWhen(post.date, post.time)));
+
+  const facts = el('div', 'post-facts');
+  facts.appendChild(el('span', 'post-capacity',
+    isDriver ? post.seats + ' суудал үлдсэн' : post.seats + ' хүн'));
+  if (isDriver && post.price > 0) facts.appendChild(el('span', 'post-price', formatPrice(post.price)));
+  body.appendChild(facts);
+
+  if (post.note) body.appendChild(el('p', 'post-note', post.note));
+
+  /* Хэн — нэвтрэх систем байхгүй тул header-ийн avatar-ын үсгийг авна.
+     Шинэ жолооч «0 үнэлгээ» биш «Шинэ гишүүн» (DESIGN §6). */
+  const person = el('div', 'post-person');
+  const headerAvatar = document.querySelector('.header .avatar');
+  const avatar = el('span', 'person-avatar', headerAvatar ? headerAvatar.textContent.trim() : 'Т');
+  avatar.setAttribute('aria-hidden', 'true');
+  const main = el('div', 'person-main');
+  main.appendChild(el('p', 'person-name', 'Таны зар'));
+  const meta = el('p', 'person-meta');
+  if (isDriver) meta.appendChild(el('span', 'chip-new', 'Шинэ гишүүн'));
+  else meta.textContent = 'Захиалагч';
+  main.appendChild(meta);
+  person.appendChild(avatar);
+  person.appendChild(main);
+  body.appendChild(person);
+
+  card.appendChild(body);
+  return card;
+}
+
+/* Шинэ картыг жагсаалтын хамгийн дээр нэмнэ */
+function prependPost(post) {
+  const list = document.querySelector('.post-list');
+  if (!list) return;
+  list.insertBefore(createPost(post), list.firstElementChild);
+}
+
+/* Хуудас ачаалахад хадгалсан постууд эхэнд, дараа нь 8 жишээ пост */
+function loadPosts() {
+  const list = document.querySelector('.post-list');
+  if (!list) return;
+  const frag = document.createDocumentFragment();
+  for (const post of readPosts()) {
+    if (post && post.from && post.to) frag.appendChild(createPost(post));
+  }
+  list.insertBefore(frag, list.firstElementChild);
+
+  /* «Дөнгөж сая» минут тутамд «1 минутын өмнө» болж шинэчлэгдэнэ */
+  setInterval(() => {
+    for (const t of list.querySelectorAll('.post-time[data-ts]')) {
+      t.textContent = formatAgo(Number(t.dataset.ts));
+    }
+  }, 60000);
+}
+
+/* Формыг анхны байдалд нь буцаана — дараагийн захиалга цэвэрхэн эхэлнэ */
+function resetForm(form) {
+  form.reset();
+  const box = document.getElementById('photoPreview');
+  if (box && !box.hidden) {
+    const img = box.querySelector('img');
+    if (img.src && img.src.indexOf('blob:') === 0) URL.revokeObjectURL(img.src);
+    img.removeAttribute('src');
+    box.hidden = true;
+  }
+  for (const bad of form.querySelectorAll('.is-bad')) bad.classList.remove('is-bad');
+  for (const box2 of form.querySelectorAll('.fld-err')) box2.hidden = true;
+  syncRoleUI();
+}
+
+/* Дээд талын ногоон мэдэгдэл — 3 секундын дараа арилна (BUILD §4) */
+let toastTimer = 0;
+function showToast(text) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = el('div', 'toast');
+    toast.id = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toast);
+  }
+  toast.textContent = text;
+  toast.classList.add('is-on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('is-on'), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', loadPosts);
+
+/* ═══════════════════════════════════════════════════════════════════
+   ХАЙЛТ, ШҮҮЛТҮҮР — CLAUDE.md §6 «Замын зураг» 3
+   Картуудыг DOM-оос шууд шүүнэ: жишээ пост, хэрэглэгчийн пост ялгаагүй.
+   Мобайлд хайлт дэлгэц дүүрэн нээгдэнэ (DESIGN §8).
+   ═══════════════════════════════════════════════════════════════════ */
+
+const KIND_BY_BADGE = {
+  'badge-livestock': 'livestock',
+  'badge-cargo': 'cargo',
+  'badge-moving': 'moving',
+  'badge-passenger': 'passenger'
+};
+
+const mobileQuery = window.matchMedia('(max-width: 640px)');
+let searchOpener = null;
+
+/* Том жижиг үсэг, илүү зай хамаарахгүй */
+function normalize(text) {
+  return String(text).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/* Картын badge-аас хэн, ямар тээвэр гэдгийг уншина */
+function cardInfo(card) {
+  let kind = 'passenger';
+  for (const cls in KIND_BY_BADGE) {
+    if (card.querySelector('.' + cls)) { kind = KIND_BY_BADGE[cls]; break; }
+  }
+  return {
+    who: card.querySelector('.badge-request') ? 'passenger' : 'driver',
+    kind: kind,
+    text: normalize(card.textContent)
+  };
+}
+
+function readFilters() {
+  const who = document.querySelector('input[name="who"]:checked');
+  const kind = document.getElementById('kindFilter');
+  const input = document.getElementById('searchInput');
+  return {
+    who: who ? who.value : 'all',
+    kind: kind ? kind.value : 'all',
+    words: input ? normalize(input.value).split(' ').filter(Boolean) : []
+  };
+}
+
+/* Бүх картыг шүүж, тоо болон хоосон төлөвийг шинэчилнэ.
+   Хайлтын үг бүр картад байх ёстой: «улаанбаатар хөвсгөл» → хоёулаа. */
+function applyFilters() {
+  const list = document.querySelector('.post-list');
+  if (!list) return;
+
+  const f = readFilters();
+  const active = f.who !== 'all' || f.kind !== 'all' || f.words.length > 0;
+  let shown = 0;
+
+  for (const card of list.querySelectorAll('.post-card')) {
+    const info = cardInfo(card);
+    const ok = (f.who === 'all' || info.who === f.who) &&
+               (f.kind === 'all' || info.kind === f.kind) &&
+               f.words.every((w) => info.text.indexOf(w) !== -1);
+    card.hidden = !ok;
+    if (ok) shown++;
+  }
+
+  const countText = shown + ' зар олдлоо';
+  const count = document.getElementById('feedCount');
+  if (count) {
+    count.hidden = !active || shown === 0;
+    count.textContent = countText;
+  }
+  const searchCount = document.getElementById('searchCount');
+  if (searchCount) searchCount.textContent = f.words.length ? countText : '';
+
+  const empty = document.getElementById('feedEmpty');
+  if (empty) empty.hidden = shown > 0;
+}
+
+function clearFilters() {
+  const all = document.querySelector('input[name="who"][value="all"]');
+  if (all) all.checked = true;
+  const kind = document.getElementById('kindFilter');
+  if (kind) kind.value = 'all';
+  const input = document.getElementById('searchInput');
+  if (input) input.value = '';
+  applyFilters();
+}
+
+/* Картуудад хамгийн олон гарсан газрын нэр — хуруугаар дарж хайна.
+   Хөдөө утсаар кирилл бичих удаан тул товч илүү хялбар. */
+function fillSearchPlaces() {
+  const box = document.getElementById('searchPlaces');
+  if (!box) return;
+  const counts = {};
+  for (const city of document.querySelectorAll('.post-list .route-city')) {
+    const name = city.textContent.trim();
+    counts[name] = (counts[name] || 0) + 1;
+  }
+  const top = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 8);
+  box.textContent = '';
+  for (const name of top) {
+    const chip = el('button', 'place-chip', name);
+    chip.type = 'button';
+    chip.addEventListener('click', () => {
+      const input = document.getElementById('searchInput');
+      input.value = name;
+      applyFilters();
+      input.focus();
+    });
+    box.appendChild(chip);
+  }
+}
+
+function onSearchKeydown(e) {
+  if (e.key === 'Escape') closeSearch();
+}
+
+/* Мобайлд дэлгэц дүүрэн нээнэ, компьютерт header-ийн талбар руу фокус */
+function openSearch(e) {
+  const input = document.getElementById('searchInput');
+  if (!input) return;
+  if (!mobileQuery.matches) {
+    input.focus();
+    return;
+  }
+  searchOpener = e && e.currentTarget ? e.currentTarget : document.activeElement;
+  fillSearchPlaces();
+  applyFilters();
+  document.body.classList.add('is-search-open', 'is-locked');
+  document.addEventListener('keydown', onSearchKeydown);
+  input.focus();
+}
+
+function closeSearch() {
+  if (!document.body.classList.contains('is-search-open')) return;
+  document.body.classList.remove('is-search-open', 'is-locked');
+  document.removeEventListener('keydown', onSearchKeydown);
+  if (searchOpener && document.contains(searchOpener)) searchOpener.focus();
+}
+
+function initFilters() {
+  const form = document.getElementById('searchForm');
+  const input = document.getElementById('searchInput');
+  if (!form || !input) return;
+
+  let timer = 0;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(applyFilters, 120);   /* үсэг бүрд биш, бичиж дуусахад */
+  });
+
+  /* Enter эсвэл «Зар харах» — мобайлд хайлтыг хааж, жагсаалт руу гүйлгэнэ */
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearTimeout(timer);
+    applyFilters();
+    if (document.body.classList.contains('is-search-open')) {
+      closeSearch();
+      const title = document.querySelector('.section-title');
+      if (title) title.scrollIntoView({ block: 'start' });
+    }
+  });
+
+  for (const radio of document.querySelectorAll('input[name="who"]')) {
+    radio.addEventListener('change', applyFilters);
+  }
+  const kind = document.getElementById('kindFilter');
+  if (kind) kind.addEventListener('change', applyFilters);
+
+  for (const btn of document.querySelectorAll('[data-open-search]')) {
+    btn.addEventListener('click', openSearch);
+  }
+  for (const btn of document.querySelectorAll('[data-close-search]')) {
+    btn.addEventListener('click', closeSearch);
+  }
+  for (const btn of document.querySelectorAll('[data-clear-filters]')) {
+    btn.addEventListener('click', clearFilters);
+  }
+
+  /* Утсаа хэвтүүлж өргөн болбол дэлгэц дүүрэн хайлтыг хаана */
+  mobileQuery.addEventListener('change', () => { if (!mobileQuery.matches) closeSearch(); });
+}
+
+/* loadPosts-ийн дараа — хадгалсан постууд ч шүүгдэнэ */
+document.addEventListener('DOMContentLoaded', initFilters);
