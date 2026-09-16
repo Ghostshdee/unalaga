@@ -365,6 +365,9 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 /* Нэг баганат жагсаалт — замын хуудсыг дээрээс доош гүйлгэн уншина
    (CLAUDE.md §2: Facebook бол лавлах загвар — feed нь нэг багана) */
 .section-title,
+.page-head,
+.driver-tools,
+.driver-list,
 .feed-tools,
 .feed-count,
 .feed-empty,
@@ -749,6 +752,100 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   color: var(--ink-muted);
   font-size: var(--text-tiny);
   font-weight: 500;
+}
+
+/* ═══════════════ ЖОЛООЧ ХАЙХ — drivers.html (CLAUDE.md §6-4) ═══════════════
+   Зарын карт «хаашаа»-г, жолоочийн карт «хэн»-ийг том харуулна.
+   Чиглэлийн шугам (DESIGN §1) энд давтагдахгүй — энгийн жагсаалт. */
+.page-head { margin-bottom: var(--space-5); }
+.page-head .section-title { margin-bottom: var(--space-1); }
+.page-sub { color: var(--ink-muted); }
+
+.driver-tools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  align-items: end;
+  margin-bottom: var(--space-4);
+}
+/* «Зөвхөн баталгаажсан» — бүтэн мөр, хуруунд 44px */
+.check {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-size: var(--text-small);
+  font-weight: 500;
+  cursor: pointer;
+}
+.check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--blue);
+}
+
+.driver-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.driver-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition);
+}
+.driver-card:hover { border-color: var(--line-2); }
+
+/* Зарын картын .post-person-ийг ашиглана — дээд талд тул хүрээгүй */
+.driver-head {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.driver-head .person-name { font-size: var(--text-h2); }
+
+.driver-car {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+.driver-car-name { font-weight: 600; }
+.driver-car-facts {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
+
+.driver-label {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-tiny);
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.driver-route-list { list-style: none; }
+.driver-route {
+  padding: 3px 0;
+  font-size: var(--text-small);
+}
+.driver-route-city { font-weight: 500; }
+
+.driver-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.driver-offers {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
 }
 
 /* ═══════════════ ШҮҮЛТҮҮР (CLAUDE.md §6-3) ═══════════════
@@ -1212,6 +1309,18 @@ body.is-locked { overflow: hidden; }
   }
   .search-count:empty { display: none; }
   .search-done { margin-top: auto; width: 100%; }
+  /* Мобайлын цэсэнд «Жолооч хайх» байхгүй — хайлтаас орох зам */
+  .search-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 600;
+  }
+
+  .driver-tools { grid-template-columns: 1fr 1fr; }
+  .driver-tools .fld-cell:first-child { grid-column: 1 / -1; }
+  .driver-card { padding: var(--space-4); }
+  .driver-foot .btn-contact { width: auto; }
 
   /* Шүүлтүүр: сегмент бүтэн өргөн, төрөл доор нь */
   .feed-tools { flex-direction: column; align-items: stretch; }

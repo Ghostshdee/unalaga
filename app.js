@@ -4,6 +4,7 @@
    2. Modal: openModal, closeModal, fillAimagSelects, syncRoleUI, validateForm
    3. Пост: createPost, savePost, loadPosts, showToast (localStorage)
    4. Хайлт, шүүлтүүр: applyFilters, openSearch (мобайлд дэлгэц дүүрэн)
+   index.html, drivers.html хоёулаа ачаална — элемент байхгүй бол функц бүр чимээгүй буцна.
    Гадны сан ашиглахгүй (CLAUDE.md §8).
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -325,6 +326,12 @@ function initModal() {
 
   form.addEventListener('input', clearErrorOnInput);
   form.addEventListener('change', clearErrorOnInput);
+
+  /* drivers.html-ийн «Захиалга» → index.html#order — энд ирээд нээгдэнэ */
+  if (location.hash === '#order') {
+    history.replaceState(null, '', location.pathname + location.search);
+    openModal();
+  }
 
   /* Mobile доод цэсийн «Захиалга» гэх мэт нэмэлт нээгчид */
   for (const el of document.querySelectorAll('[data-open-order]')) {
@@ -650,7 +657,11 @@ function readFilters() {
    Хайлтын үг бүр картад байх ёстой: «улаанбаатар хөвсгөл» → хоёулаа. */
 function applyFilters() {
   const list = document.querySelector('.post-list');
-  if (!list) return;
+  if (!list) {
+    /* Зарын жагсаалтгүй хуудас (drivers.html) — өөрөө шүүнэ */
+    document.dispatchEvent(new Event('unalaga:search'));
+    return;
+  }
 
   const f = readFilters();
   const active = f.who !== 'all' || f.kind !== 'all' || f.words.length > 0;
@@ -694,7 +705,7 @@ function fillSearchPlaces() {
   const box = document.getElementById('searchPlaces');
   if (!box) return;
   const counts = {};
-  for (const city of document.querySelectorAll('.post-list .route-city')) {
+  for (const city of document.querySelectorAll('.post-list .route-city, .driver-list .driver-route-city')) {
     const name = city.textContent.trim();
     counts[name] = (counts[name] || 0) + 1;
   }
