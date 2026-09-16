@@ -472,15 +472,31 @@ function el(tag, cls, text) {
   return node;
 }
 
+/* Тээврийн төрөл → badge (DESIGN §5) */
+const KIND_BADGE = {
+  passenger: ['badge-passenger', 'Хүн тээвэр'],
+  livestock: ['badge-livestock', 'Мал тээвэр'],
+  cargo: ['badge-cargo', 'Бараа тээвэр'],
+  moving: ['badge-moving', 'Гэр нүүлгэх']
+};
+
 /* Пост объектоос картын DOM үүсгэнэ. innerHTML биш textContent —
-   хэрэглэгчийн бичсэн тэмдэглэлд HTML орсон ч код болж ажиллахгүй. */
+   хэрэглэгчийн бичсэн тэмдэглэлд HTML орсон ч код болж ажиллахгүй.
+   Хэрэглэгчийн өөрийн зараас гадна жолоочийн хуудасны зарыг ч зурна:
+   post.vehicle (машины панел), post.gap (зай/хугацаа), post.capacityText,
+   post.hidePerson (жолоочийн өөрийн хуудсанд нэрийг давтахгүй). */
 function createPost(post) {
   const isDriver = post.role === 'driver';
-  const card = el('article', 'post-card is-mine');
+  const card = el('article', post.hidePerson ? 'post-card' : 'post-card is-mine');
   card.dataset.postId = post.id;
 
   /* Машины зураг — жолооч зураг оруулсан үед л (BUILD §2) */
-  if (isDriver && post.photo) {
+  if (isDriver && post.vehicle) {
+    /* Жишээ жолоочийн брэндийн панел + машины нэр (нүүр хуудастай ижил) */
+    const panel = el('div', 'post-photo ' + post.vehicle.veh);
+    panel.appendChild(el('span', 'post-photo-name', post.vehicle.name));
+    card.appendChild(panel);
+  } else if (isDriver && post.photo) {
     const photo = el('div', 'post-photo veh-sedan');
     const img = el('img');
     img.src = post.photo;
@@ -497,7 +513,8 @@ function createPost(post) {
   /* Badge + хугацаа */
   const head = el('div', 'post-head');
   const badges = el('div', 'post-badges');
-  badges.appendChild(el('span', 'badge badge-passenger', 'Хүн тээвэр'));
+  const kind = KIND_BADGE[post.kind] || KIND_BADGE.passenger;
+  badges.appendChild(el('span', 'badge ' + kind[0], kind[1]));
   if (!isDriver) badges.appendChild(el('span', 'badge badge-request', 'Унаа хэрэгтэй'));
   head.appendChild(badges);
   const time = el('span', 'post-time', formatAgo(post.createdAt));
@@ -512,8 +529,9 @@ function createPost(post) {
   rail.setAttribute('aria-hidden', 'true');
   rail.appendChild(el('i', 'route-dot route-dot-start'));
   rail.appendChild(el('i', 'route-dot route-dot-end'));
-  const cities = el('div', 'route-cities route-cities-tight');
+  const cities = el('div', post.gap ? 'route-cities' : 'route-cities route-cities-tight');
   cities.appendChild(el('p', 'route-city route-from', post.from));
+  if (post.gap) cities.appendChild(el('p', 'route-gap', post.gap));
   cities.appendChild(el('p', 'route-city route-to', post.to));
   route.appendChild(rail);
   route.appendChild(cities);
@@ -523,11 +541,23 @@ function createPost(post) {
 
   const facts = el('div', 'post-facts');
   facts.appendChild(el('span', 'post-capacity',
-    isDriver ? post.seats + ' суудал үлдсэн' : post.seats + ' хүн'));
-  if (isDriver && post.price > 0) facts.appendChild(el('span', 'post-price', formatPrice(post.price)));
+    post.capacityText || (isDriver ? post.seats + ' суудал үлдсэн' : post.seats + ' хүн')));
+  if (isDriver && post.priceLines) {
+    /* Хоёр хэсэгтэй үнэ — «Хүн 25 000 ₮ / Бараа 30 000 ₮» */
+    const split = el('span', 'post-price post-price-split');
+    for (const line of post.priceLines) split.appendChild(el('span', null, line));
+    facts.appendChild(split);
+  } else if (isDriver && post.price > 0) {
+    facts.appendChild(el('span', 'post-price', formatPrice(post.price)));
+  }
   body.appendChild(facts);
 
   if (post.note) body.appendChild(el('p', 'post-note', post.note));
+
+  if (post.hidePerson) {
+    card.appendChild(body);
+    return card;
+  }
 
   /* Хэн — нэвтрэх систем байхгүй тул header-ийн avatar-ын үсгийг авна.
      Шинэ жолооч «0 үнэлгээ» биш «Шинэ гишүүн» (DESIGN §6). */
@@ -551,14 +581,14 @@ function createPost(post) {
 
 /* Шинэ картыг жагсаалтын хамгийн дээр нэмнэ */
 function prependPost(post) {
-  const list = document.querySelector('.post-list');
+  const list = document.querySelector('.post-list:not(.profile-posts)');
   if (!list) return;
   list.insertBefore(createPost(post), list.firstElementChild);
 }
 
 /* Хуудас ачаалахад хадгалсан постууд эхэнд, дараа нь 8 жишээ пост */
 function loadPosts() {
-  const list = document.querySelector('.post-list');
+  const list = document.querySelector('.post-list:not(.profile-posts)');
   if (!list) return;
   const frag = document.createDocumentFragment();
   for (const post of readPosts()) {
@@ -656,7 +686,7 @@ function readFilters() {
 /* Бүх картыг шүүж, тоо болон хоосон төлөвийг шинэчилнэ.
    Хайлтын үг бүр картад байх ёстой: «улаанбаатар хөвсгөл» → хоёулаа. */
 function applyFilters() {
-  const list = document.querySelector('.post-list');
+  const list = document.querySelector('.post-list:not(.profile-posts)');
   if (!list) {
     /* Зарын жагсаалтгүй хуудас (drivers.html) — өөрөө шүүнэ */
     document.dispatchEvent(new Event('unalaga:search'));
@@ -705,7 +735,7 @@ function fillSearchPlaces() {
   const box = document.getElementById('searchPlaces');
   if (!box) return;
   const counts = {};
-  for (const city of document.querySelectorAll('.post-list .route-city, .driver-list .driver-route-city')) {
+  for (const city of document.querySelectorAll('.post-list:not(.profile-posts) .route-city, .driver-list .driver-route-city, .driver-route-city')) {
     const name = city.textContent.trim();
     counts[name] = (counts[name] || 0) + 1;
   }
@@ -766,6 +796,10 @@ function initFilters() {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     clearTimeout(timer);
+    if (!document.querySelector('.post-list:not(.profile-posts), .driver-list')) {
+      location.href = 'drivers.html' + (input.value.trim() ? '?q=' + encodeURIComponent(input.value.trim()) : '');
+      return;
+    }
     applyFilters();
     if (document.body.classList.contains('is-search-open')) {
       closeSearch();
