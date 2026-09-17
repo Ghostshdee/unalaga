@@ -17,6 +17,27 @@ function section(title, cls) {
   return box;
 }
 
+/* «Хадгалах» ↔ «Хадгалсан» — профайлын «Хадгалсан жолооч»-д орно.
+   aria-pressed — дэлгэц уншигч товчны төлөвийг хэлнэ. */
+function saveButton(d) {
+  const btn = el('button', 'btn btn-ghost save-toggle');
+  btn.type = 'button';
+  const paint = () => {
+    const on = isSaved(d.id);
+    btn.textContent = on ? '★ Хадгалсан' : '☆ Хадгалах';
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('is-on', on);
+  };
+  btn.addEventListener('click', () => {
+    const on = toggleSaved(d.id);
+    paint();
+    showToast(on ? 'Жолооч хадгалагдлаа' : 'Хадгалсан жагсаалтаас хасагдлаа',
+      on ? { href: 'profile.html#mySaved', label: 'Харах' } : null);
+  });
+  paint();
+  return btn;
+}
+
 /* Дээд хэсэг: хэн, итгэл, залгах товч (DESIGN §6) */
 function renderIntro(d) {
   const card = el('div', 'profile-card');
@@ -60,6 +81,7 @@ function renderIntro(d) {
   card.appendChild(call);
   card.appendChild(el('p', 'profile-note', 'Жишээ дугаар — бодит холболт биш.'));
 
+  card.appendChild(saveButton(d));
   return card;
 }
 

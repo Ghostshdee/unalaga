@@ -4,6 +4,7 @@
    2. Modal: openModal, closeModal, fillAimagSelects, syncRoleUI, validateForm
    3. Пост: createPost, savePost, loadPosts, showToast (localStorage)
    4. Хайлт, шүүлтүүр: applyFilters, openSearch (мобайлд дэлгэц дүүрэн)
+   5. Профайл: readProfile, readSaved, зар засах (#edit-<id>), устгах
    index.html, drivers.html хоёулаа ачаална — элемент байхгүй бол функц бүр чимээгүй буцна.
    Гадны сан ашиглахгүй (CLAUDE.md §8).
    ═══════════════════════════════════════════════════════════════════ */
@@ -249,6 +250,14 @@ function openModal() {
   const date = document.getElementById('fDate');
   date.min = new Date().toISOString().slice(0, 10);
 
+  /* Шинэ зар бол профайлд хадгалсан «Жолооч / Захиалагч»-ийг сонгоно */
+  const form = document.getElementById('orderForm');
+  const profile = readProfile();
+  if (!form.dataset.editId && profile.role) {
+    const radio = form.querySelector('input[name="role"][value="' + profile.role + '"]');
+    if (radio) radio.checked = true;
+  }
+
   syncRoleUI();
   document.querySelector('#orderModal .modal-x').focus();
 }
@@ -260,6 +269,10 @@ function closeModal() {
   modal.hidden = true;
   document.body.classList.remove('is-locked');
   document.removeEventListener('keydown', onModalKeydown);
+
+  /* Засаж байгаад «Болих» дарвал дараагийн шинэ зар хуучин утгаар эхлэхгүй */
+  const form = document.getElementById('orderForm');
+  if (form && form.dataset.editId) resetForm(form);
 
   /* Фокусыг нээсэн товч руу нь буцаана — товчлуураар явж буй хүнд чухал */
   if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
@@ -277,12 +290,14 @@ function initPhotoPreview() {
   input.addEventListener('change', () => {
     const file = input.files && input.files[0];
     if (!file) return;
+    delete input.form.dataset.keepPhoto;   /* засах үед шинэ зураг сонгосон */
     if (img.src && img.src.indexOf('blob:') === 0) URL.revokeObjectURL(img.src);
     img.src = URL.createObjectURL(file);
     box.hidden = false;
   });
 
   clear.addEventListener('click', () => {
+    delete input.form.dataset.keepPhoto;   /* хуучин зургийг ч хасна */
     if (img.src && img.src.indexOf('blob:') === 0) URL.revokeObjectURL(img.src);
     input.value = '';
     img.removeAttribute('src');
@@ -333,6 +348,19 @@ function initModal() {
     openModal();
   }
 
+  /* profile.html-ийн «Засах» → index.html#edit-<id> — бөглөсөн формтой нээнэ */
+  const editMatch = /^#edit-(\d+)$/.exec(location.hash);
+  if (editMatch) {
+    history.replaceState(null, '', location.pathname + location.search);
+    const post = readPosts().find((p) => String(p.id) === editMatch[1]);
+    if (post) {
+      fillForm(form, post);
+      openModal();
+    } else {
+      showToast('Зар олдсонгүй — устгагдсан байж магадгүй');
+    }
+  }
+
   /* Mobile доод цэсийн «Захиалга» гэх мэт нэмэлт нээгчид */
   for (const el of document.querySelectorAll('[data-open-order]')) {
     el.addEventListener('click', openModal);
@@ -345,13 +373,32 @@ function initModal() {
     busy = true;
 
     const post = await readForm(form);
+    const myPosts = { href: 'profile.html', label: 'Миний зарууд' };
+
+    if (form.dataset.editId) {
+      /* Засах — id, нийтэлсэн цаг хэвээр, хуучин зураг хадгалагдана */
+      const old = readPosts().find((p) => String(p.id) === form.dataset.editId);
+      if (old) {
+        post.id = old.id;
+        post.createdAt = old.createdAt;
+        if (!post.photo && form.dataset.keepPhoto) post.photo = old.photo;
+      }
+      const saved = updatePost(post);
+      replacePostCard(post);
+      closeModal();
+      resetForm(form);
+      showToast(saved ? 'Зар шинэчлэгдлээ' : 'Зар шинэчлэгдлээ. Зураг хэт том тул хадгалагдсангүй', myPosts);
+      busy = false;
+      return;
+    }
+
     const saved = savePost(post);
     clearFilters();   /* шүүлтүүр идэвхтэй байсан ч шинэ зар заавал харагдана */
     prependPost(post);
 
     closeModal();
     resetForm(form);
-    showToast(saved ? 'Захиалга нийтлэгдлээ' : 'Захиалга нийтлэгдлээ. Зураг хэт том тул хадгалагдсангүй');
+    showToast(saved ? 'Захиалга нийтлэгдлээ' : 'Захиалга нийтлэгдлээ. Зураг хэт том тул хадгалагдсангүй', myPosts);
     busy = false;
   });
 }
@@ -410,8 +457,122 @@ async function readForm(form) {
     seats: Number(fd.get('seats')) || 1,
     price: isDriver && fd.get('price') ? Number(fd.get('price')) : 0,
     note: String(fd.get('note') || '').trim(),
-    photo: isDriver ? await shrinkPhoto(photoInput.files && photoInput.files[0]) : ''
+    photo: isDriver ? await shrinkPhoto(photoInput.files && photoInput.files[0]) : '',
+    /* Нийтэлсэн үеийн профайл — дараа нь профайл өөрчлөгдсөн ч зар хэвээр */
+    author: readProfile().name || '',
+    car: isDriver ? profileCar() : null
   };
+}
+
+/* ── ПРОФАЙЛ (profile.html) — нэвтрэх систем ирэх хүртэл энэ browser-т ── */
+
+const PROFILE_KEY = 'unalaga_profile';
+const SAVED_KEY = 'unalaga_saved_drivers';
+
+/* Машины төрөл → карт дээрх дүрс (style.css .veh-*) */
+const VEH_BY_TYPE = { sedan: 'veh-sedan', van: 'veh-van', pickup: 'veh-pickup', truck: 'veh-pickup' };
+
+function readJSON(key, fallback) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key) || 'null');
+    return v == null ? fallback : v;
+  } catch (err) {
+    return fallback;
+  }
+}
+
+function writeJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+/* { name, phone, role: 'driver'|'passenger', car: { name, type, seats, livestockBox } } */
+function readProfile() {
+  const p = readJSON(PROFILE_KEY, {});
+  return p && typeof p === 'object' && !Array.isArray(p) ? p : {};
+}
+
+function saveProfile(p) {
+  return writeJSON(PROFILE_KEY, p);
+}
+
+/* Жолоочийн профайлд машин бөглөсөн бол түүнийг, үгүй бол null */
+function profileCar() {
+  const p = readProfile();
+  return p.role === 'driver' && p.car && p.car.name ? p.car : null;
+}
+
+/* Хадгалсан жолоочийн id-ууд (drivers.js DRIVERS) */
+function readSaved() {
+  const list = readJSON(SAVED_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+function isSaved(id) {
+  return readSaved().indexOf(id) !== -1;
+}
+
+/* Хадгалах ↔ хасах. Буцаах утга: одоо хадгалагдсан эсэх */
+function toggleSaved(id) {
+  const list = readSaved();
+  const at = list.indexOf(id);
+  if (at === -1) list.unshift(id);
+  else list.splice(at, 1);
+  writeJSON(SAVED_KEY, list);
+  return at === -1;
+}
+
+/* Засах гэж буй зарын утгаар формыг бөглөнө */
+function fillForm(form, post) {
+  resetForm(form);
+  form.dataset.editId = String(post.id);
+  const role = form.querySelector('input[name="role"][value="' + post.role + '"]');
+  if (role) role.checked = true;
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v == null ? '' : v; };
+  set('fFrom', post.from);
+  set('fTo', post.to);
+  set('fDate', post.date);
+  set('fTime', post.time);
+  set('fSeats', post.seats);
+  set('fPrice', post.price || '');
+  set('fNote', post.note);
+  if (post.photo) {
+    const box = document.getElementById('photoPreview');
+    box.querySelector('img').src = post.photo;
+    box.hidden = false;
+    form.dataset.keepPhoto = '1';
+  }
+  document.getElementById('orderTitle').textContent = 'Зар засах';
+  const submit = document.querySelector('#orderModal [type="submit"]');
+  if (submit) submit.textContent = 'Хадгалах';
+  syncRoleUI();
+}
+
+/* localStorage доторх зарыг солино (байрлал нь хэвээр) */
+function updatePost(post) {
+  const list = readPosts().map((p) => (String(p.id) === String(post.id) ? post : p));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    return true;
+  } catch (err) {
+    post.photo = '';
+    writeJSON(STORAGE_KEY, list.map((p) => (String(p.id) === String(post.id) ? post : p)));
+    return false;
+  }
+}
+
+function deletePost(id) {
+  return writeJSON(STORAGE_KEY, readPosts().filter((p) => String(p.id) !== String(id)));
+}
+
+/* Нүүр хуудсан дээрх картыг шинэ утгаар солино */
+function replacePostCard(post) {
+  const old = document.querySelector('.post-card[data-post-id="' + post.id + '"]');
+  if (old) old.replaceWith(createPost(post));
 }
 
 function readPosts() {
@@ -491,10 +652,15 @@ function createPost(post) {
   card.dataset.postId = post.id;
 
   /* Машины зураг — жолооч зураг оруулсан үед л (BUILD §2) */
-  if (isDriver && post.vehicle) {
+  /* Профайлын машинтай, зураггүй зар → брэндийн панел + машины нэр */
+  const vehicle = post.vehicle ||
+    (isDriver && !post.photo && post.car && post.car.name
+      ? { veh: VEH_BY_TYPE[post.car.type] || 'veh-sedan', name: post.car.name }
+      : null);
+  if (isDriver && vehicle) {
     /* Жишээ жолоочийн брэндийн панел + машины нэр (нүүр хуудастай ижил) */
-    const panel = el('div', 'post-photo ' + post.vehicle.veh);
-    panel.appendChild(el('span', 'post-photo-name', post.vehicle.name));
+    const panel = el('div', 'post-photo ' + vehicle.veh);
+    panel.appendChild(el('span', 'post-photo-name', vehicle.name));
     card.appendChild(panel);
   } else if (isDriver && post.photo) {
     const photo = el('div', 'post-photo veh-sedan');
@@ -505,6 +671,7 @@ function createPost(post) {
     img.height = 338;
     img.onerror = () => photo.classList.add('no-image');
     photo.appendChild(img);
+    if (post.car && post.car.name) photo.appendChild(el('span', 'post-photo-name', post.car.name));
     card.appendChild(photo);
   }
 
@@ -559,14 +726,16 @@ function createPost(post) {
     return card;
   }
 
-  /* Хэн — нэвтрэх систем байхгүй тул header-ийн avatar-ын үсгийг авна.
+  /* Хэн — профайлд нэрээ бичсэн бол тэр нэр, үгүй бол «Таны зар».
      Шинэ жолооч «0 үнэлгээ» биш «Шинэ гишүүн» (DESIGN §6). */
   const person = el('div', 'post-person');
   const headerAvatar = document.querySelector('.header .avatar');
-  const avatar = el('span', 'person-avatar', headerAvatar ? headerAvatar.textContent.trim() : 'Т');
+  const initial = post.author ? post.author.charAt(0).toUpperCase()
+    : (headerAvatar ? headerAvatar.textContent.trim() : 'Т');
+  const avatar = el('span', 'person-avatar', initial);
   avatar.setAttribute('aria-hidden', 'true');
   const main = el('div', 'person-main');
-  main.appendChild(el('p', 'person-name', 'Таны зар'));
+  main.appendChild(el('p', 'person-name', post.author || 'Таны зар'));
   const meta = el('p', 'person-meta');
   if (isDriver) meta.appendChild(el('span', 'chip-new', 'Шинэ гишүүн'));
   else meta.textContent = 'Захиалагч';
@@ -616,12 +785,19 @@ function resetForm(form) {
   }
   for (const bad of form.querySelectorAll('.is-bad')) bad.classList.remove('is-bad');
   for (const box2 of form.querySelectorAll('.fld-err')) box2.hidden = true;
+  delete form.dataset.editId;
+  delete form.dataset.keepPhoto;
+  const title = document.getElementById('orderTitle');
+  if (title) title.textContent = 'Шинэ захиалга';
+  const submit = document.querySelector('#orderModal [type="submit"]');
+  if (submit) submit.textContent = 'Захиалга үүсгэх';
   syncRoleUI();
 }
 
-/* Дээд талын ногоон мэдэгдэл — 3 секундын дараа арилна (BUILD §4) */
+/* Дээд талын ногоон мэдэгдэл — 3 секундын дараа арилна (BUILD §4).
+   link = { href, label } өгвөл дарах хугацаа хэрэгтэй тул 6 секунд. */
 let toastTimer = 0;
-function showToast(text) {
+function showToast(text, link) {
   let toast = document.getElementById('toast');
   if (!toast) {
     toast = el('div', 'toast');
@@ -631,9 +807,15 @@ function showToast(text) {
     document.body.appendChild(toast);
   }
   toast.textContent = text;
+  if (link) {
+    toast.appendChild(document.createTextNode(' '));
+    const a = el('a', 'toast-link', link.label);
+    a.href = link.href;
+    toast.appendChild(a);
+  }
   toast.classList.add('is-on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('is-on'), 3000);
+  toastTimer = setTimeout(() => toast.classList.remove('is-on'), link ? 6000 : 3000);
 }
 
 document.addEventListener('DOMContentLoaded', loadPosts);

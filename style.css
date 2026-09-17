@@ -1000,6 +1000,65 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   line-height: 1.6;
 }
 
+/* ═══════════════ ПРОФАЙЛ — profile.html (Төлөвлөгөө 1.1, 1.2) ═══════════════ */
+.me-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.me-form fieldset { border: 0; min-width: 0; }
+.me-seg { display: grid; grid-template-columns: 1fr 1fr; }
+.me-seg .seg-item span { justify-content: center; min-height: 44px; }
+/* .me-form fieldset { border: 0 }-ийг дарна */
+.me-form .me-car {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+.me-form .me-car[hidden] { display: none; }
+.me-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+.profile-card > .btn { align-self: flex-start; }
+.profile-section > .btn { margin-top: var(--space-3); }
+
+/* Миний зарын доорх Засах / Устгах */
+.post-actions {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+.post-actions .btn { flex: 1; min-height: 44px; font-size: var(--text-small); }
+/* Устгах — улаан зөвхөн устгах үйлдэлд (DESIGN §2) */
+/* .btn-ghost доор тодорхойлогдсон тул хоёр класстай — эс бөгөөс өнгө дарагдана */
+.btn-ghost.btn-danger { color: var(--red); }
+.btn-ghost.btn-danger:hover { background: var(--red-wash); border-color: var(--red); }
+
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Жолоочийн хуудасны «Хадгалах» */
+.save-toggle { width: 100%; }
+.save-toggle.is-on { color: var(--gold); border-color: var(--gold); }
+
+/* Мэдэгдэл доторх холбоос — ногоон дээр цагаан, доогуур зураастай */
+.toast-link {
+  color: var(--white);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 700;
+  margin-left: var(--space-2);
+}
+
 /* ═══════════════ ШҮҮЛТҮҮР (CLAUDE.md §6-3) ═══════════════
    Карт биш — жагсаалтын дээрх нам гүм мөр. Анхаарал картад үлдэнэ. */
 .post-card[hidden],
@@ -1474,6 +1533,12 @@ body.is-locked { overflow: hidden; }
   .driver-card { padding: var(--space-4); }
   .profile-card { padding: var(--space-4); }
   .profile-name { font-size: 20px; }
+  .me-actions .btn { flex: 1; }
+  /* Хадгалсан жолооч: «N идэвхтэй зар» дээд мөрөнд, Хасах + Холбогдох доор */
+  .saved-list .driver-foot { flex-wrap: wrap; }
+  .saved-list .driver-offers { flex-basis: 100%; }
+  .saved-list .driver-foot .btn { flex: 1; }
+  .me-form .fld-row { grid-template-columns: 1fr 1fr; }
   .profile-section { margin-top: var(--space-5); }
   .driver-foot .btn-contact { width: auto; }
 
