@@ -62,9 +62,8 @@
       <button class="icon-btn search-open" type="button" aria-label="Хайх" data-open-search>
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m21 21-5.4-5.4"/></svg>
       </button>
-      <button class="icon-btn" type="button" aria-label="Мэдэгдэл">
+      <button class="icon-btn" type="button" aria-label="Мэдэгдэл" aria-expanded="false" aria-controls="notifPanel" data-notif>
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5a6 6 0 0 1 12 0c0 3.6 1.4 5 2 5.75H4c.6-.75 2-2.15 2-5.75Z"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0"/></svg>
-        <span class="notif-count">3</span>
       </button>
       <span class="avatar" title="Профайл">Б</span>
     </div>
@@ -78,10 +77,9 @@
         <ul class="nav">
           <li><a class="nav-link is-active" href="./" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7"/><path d="M5.5 9.4V20h13V9.4"/></svg>Нүүр хуудас</a></li>
           <li><a class="nav-link" href="drivers.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5v6M4.6 16l5.2-3M19.4 16l-5.2-3"/></svg>Жолооч хайх</a></li>
-          <li><a class="nav-link" href="#"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>Захиалга өгөх</a></li>
-          <li><a class="nav-link" href="#"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Газрын зураг</a></li>
+          <li><a class="nav-link" href="index.html#order" data-open-order><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>Захиалга өгөх</a></li>
+          <li><a class="nav-link" href="map.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Газрын зураг</a></li>
           <li><a class="nav-link" href="profile.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a></li>
-          <li><a class="nav-link" href="#"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h9M18 8h1M5 16h1M10 16h9"/><circle cx="16" cy="8" r="2.2"/><circle cx="8" cy="16" r="2.2"/></svg>Тохиргоо</a></li>
         </ul>
       </nav>
     </aside>
@@ -529,7 +527,7 @@
     <a class="bnav-link is-active" href="./" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7"/><path d="M5.5 9.4V20h13V9.4"/></svg>Нүүр</a>
     <button class="bnav-link" type="button" data-open-search><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m21 21-5.4-5.4"/></svg>Хайх</button>
     <button class="bnav-link bnav-order" type="button" data-open-order><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Захиалга</button>
-    <a class="bnav-link" href="#"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Зураг</a>
+    <a class="bnav-link" href="map.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Зураг</a>
     <a class="bnav-link" href="profile.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a>
   </nav>
 
@@ -571,7 +569,8 @@
           </div>
         </fieldset>
 
-        <!-- 2 · Тээврийн төрөл — одоогоор зөвхөн хүн тээвэр ажиллана -->
+        <!-- 2 · Тээврийн төрөл — сонголтоор доорх талбарууд солигдоно (BUILD §12).
+             Нэг зар = нэг төрөл. -->
         <fieldset class="fld">
           <legend class="fld-label">Тээврийн төрөл</legend>
           <div class="pick pick-grid">
@@ -582,26 +581,28 @@
                 <b>Хүн тээвэр</b>
               </span>
             </label>
-            <button class="pick-card is-soon" type="button" data-soon>
+            <label class="pick-card">
+              <input type="radio" name="kind" value="livestock">
               <span class="pick-in">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16V9l3-3h6l3 3v7"/><path d="M7 19v-3M16 19v-3M10 9h3"/><path d="M16 11h3l1 5h-4"/></svg>
-                <b>Мал тээвэр</b><em class="soon">Тун удахгүй</em>
+                <b>Мал тээвэр</b>
               </span>
-            </button>
-            <button class="pick-card is-soon" type="button" data-soon>
+            </label>
+            <label class="pick-card">
+              <input type="radio" name="kind" value="cargo">
               <span class="pick-in">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"/><path d="M4 8.5 12 13l8-4.5M12 13v7"/></svg>
-                <b>Бараа тээвэр</b><em class="soon">Тун удахгүй</em>
+                <b>Бараа тээвэр</b>
               </span>
-            </button>
-            <button class="pick-card is-soon" type="button" data-soon>
+            </label>
+            <label class="pick-card">
+              <input type="radio" name="kind" value="moving">
               <span class="pick-in">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4.5l8.5 6.5"/><path d="M5.5 9.6V20h13V9.6"/><path d="M10 20v-5h4v5"/></svg>
-                <b>Гэр нүүлгэх</b><em class="soon">Тун удахгүй</em>
+                <b>Гэр нүүлгэх</b>
               </span>
-            </button>
+            </label>
           </div>
-          <p class="fld-note" id="soonNote" hidden>Энэ функц тун удахгүй нэмэгдэнэ</p>
         </fieldset>
 
         <!-- 3 · Хаанаас хаашаа? — аймгуудыг app.js дүүргэнэ -->
@@ -641,12 +642,49 @@
           </div>
         </fieldset>
 
-        <!-- 5 · Хэдэн хүн? -->
-        <div class="fld">
-          <label class="fld-label" for="fSeats">Хэдэн хүн?</label>
+        <!-- 5 · Төрөл бүрийн талбар. data-kind — зөвхөн тэр төрөлд харагдана.
+             data-driver-text / data-passenger-text — үүргээр асуултын үг солигдоно. -->
+        <div class="fld" data-kind="passenger">
+          <label class="fld-label" for="fSeats" data-driver-text="Хэдэн суудал сул вэ?" data-passenger-text="Хэдэн хүн?">Хэдэн суудал сул вэ?</label>
           <input class="inp inp-narrow" id="fSeats" name="seats" type="number" min="1" max="20" value="1" required>
           <p class="fld-err" data-err-for="seats" hidden></p>
         </div>
+
+        <div class="fld" data-kind="livestock" hidden>
+          <label class="fld-label" for="fLivestock" data-driver-text="Ямар мал, хэдийг авч чадах вэ?" data-passenger-text="Ямар мал, хэдийг тээвэрлэх вэ?">Ямар мал, хэдийг авч чадах вэ?</label>
+          <input class="inp" id="fLivestock" name="livestock" type="text" maxlength="80" placeholder="Жишээ: 5 хонь, 2 ямаа эсвэл 1 үхэр">
+          <p class="fld-err" data-err-for="livestock" hidden></p>
+        </div>
+
+        <div class="fld" data-kind="cargo" hidden>
+          <div class="fld-row">
+            <div class="fld-cell">
+              <label class="fld-sub" for="fCargoKg" data-driver-text="Хэдэн кг хүртэл?" data-passenger-text="Жин">Хэдэн кг хүртэл?</label>
+              <div class="inp-money">
+                <input class="inp" id="fCargoKg" name="cargoKg" type="number" min="1" max="50000" step="1" placeholder="500" inputmode="numeric">
+                <span class="inp-suffix" aria-hidden="true">кг</span>
+              </div>
+              <p class="fld-err" data-err-for="cargoKg" hidden></p>
+            </div>
+            <div class="fld-cell">
+              <label class="fld-sub" for="fCargoWhat" data-driver-text="Ямар бараа (заавал биш)" data-passenger-text="Юу вэ?">Ямар бараа (заавал биш)</label>
+              <input class="inp" id="fCargoWhat" name="cargoWhat" type="text" maxlength="60" placeholder="Жишээ: Малын тэжээл">
+              <p class="fld-err" data-err-for="cargoWhat" hidden></p>
+            </div>
+          </div>
+        </div>
+
+        <fieldset class="fld" data-kind="moving" hidden>
+          <legend class="fld-label">Гэр нүүлгэх</legend>
+          <label class="check">
+            <input type="checkbox" id="fGherFurniture" name="gherFurniture">
+            <span data-driver-text="Тавилга, эд зүйл хамт авч чадна" data-passenger-text="Тавилга, эд зүйлтэй">Тавилга, эд зүйл хамт авч чадна</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="fGherHelp" name="gherHelp">
+            <span data-driver-text="Ачих, буулгахад туслах хүнтэй" data-passenger-text="Ачих, буулгахад туслах хүн хэрэгтэй">Ачих, буулгахад туслах хүнтэй</span>
+          </label>
+        </fieldset>
 
         <!-- 6 · Үнэ — зөвхөн жолооч -->
         <div class="fld" data-driver-only>

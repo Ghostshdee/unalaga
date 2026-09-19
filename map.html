@@ -4,17 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0B2545">
-  <title>Профайл — Уналага.мн</title>
-  <meta name="description" content="Миний зарууд, машин, хадгалсан жолооч.">
+  <title>Чиглэлийн зураг — Уналага.мн</title>
+  <meta name="description" content="Монголын аймгуудаар жолоочийн явдаг чиглэл — аймаг сонгоод жолооч олоорой.">
 
   <!-- Facebook, Messenger-ээр хуваалцахад гарах preview. JS ажиллуулдаггүй
        тул статик утга. Зураг: hero-гийн дүр зураг, 1200×630 (og-image.jpg). -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Уналага.мн">
   <meta property="og:locale" content="mn_MN">
-  <meta property="og:title" content="Профайл — Уналага.мн">
-  <meta property="og:description" content="Миний зарууд, машин, хадгалсан жолооч.">
-  <meta property="og:url" content="https://ghostshdee.github.io/unalaga/profile.html">
+  <meta property="og:title" content="Чиглэлийн зураг — Уналага.мн">
+  <meta property="og:description" content="Монголын аймгуудаар жолоочийн явдаг чиглэл — аймаг сонгоод жолооч олоорой.">
+  <meta property="og:url" content="https://ghostshdee.github.io/unalaga/map.html">
   <meta property="og:image" content="https://ghostshdee.github.io/unalaga/og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -77,17 +77,34 @@
           <li><a class="nav-link" href="./"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7"/><path d="M5.5 9.4V20h13V9.4"/></svg>Нүүр хуудас</a></li>
           <li><a class="nav-link" href="drivers.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5v6M4.6 16l5.2-3M19.4 16l-5.2-3"/></svg>Жолооч хайх</a></li>
           <li><a class="nav-link" href="index.html#order"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>Захиалга өгөх</a></li>
-          <li><a class="nav-link" href="map.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Газрын зураг</a></li>
-          <li><a class="nav-link is-active" href="profile.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a></li>
+          <li><a class="nav-link is-active" href="map.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Газрын зураг</a></li>
+          <li><a class="nav-link" href="profile.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a></li>
         </ul>
       </nav>
     </aside>
 
-    <!-- ═══════════════ MAIN — Профайл ═══════════════
-         profile.js зурна: миний мэдээлэл · машин · зарууд · хадгалсан жолооч.
-         Нэвтрэх систем ирэх хүртэл энэ browser-ийн localStorage-д. -->
+    <!-- ═══════════════ MAIN — Чиглэлийн схем ═══════════════
+         map.js зурна. Бодит газрын зураг БИШ — аймгийн төв + жолоочийн чиглэл.
+         Leaflet (Фаз 6) 2G/3G-д хүнд тул одоохондоо SVG схем. -->
     <main class="main">
-      <div class="profile" id="profileRoot"></div>
+      <header class="page-head">
+        <h1 class="section-title">Чиглэлийн зураг</h1>
+        <p class="page-sub">Аймаг дээр дарж тэр аймаг руу явдаг жолоочийг харна уу.</p>
+      </header>
+
+      <div class="map-wrap">
+        <svg class="map-svg" id="mapSvg" viewBox="0 0 1000 520" role="group" aria-label="Монголын аймгууд, жолоочийн чиглэлийн схем"></svg>
+        <p class="map-note"><span id="mapCount"></span> · Схем — байршил ойролцоо</p>
+      </div>
+
+      <div class="map-pick">
+        <label class="fld-sub" for="mapAimag">Аймаг сонгох</label>
+        <select class="inp" id="mapAimag">
+          <option value="">Сонгох</option>
+        </select>
+      </div>
+
+      <section class="profile-section map-picked" id="mapPicked" aria-live="polite"></section>
     </main>
   </div>
 
@@ -98,13 +115,13 @@
     <a class="bnav-link" href="./"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7"/><path d="M5.5 9.4V20h13V9.4"/></svg>Нүүр</a>
     <button class="bnav-link" type="button" data-open-search><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m21 21-5.4-5.4"/></svg>Хайх</button>
     <a class="bnav-link bnav-order" href="index.html#order"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Захиалга</a>
-    <a class="bnav-link" href="map.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Зураг</a>
-    <a class="bnav-link is-active" href="profile.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a>
+    <a class="bnav-link is-active" href="map.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Зураг</a>
+    <a class="bnav-link" href="profile.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a>
   </nav>
 
 
   <script src="app.js" defer></script>
   <script src="drivers.js" defer></script>
-  <script src="profile.js" defer></script>
+  <script src="map.js" defer></script>
 </body>
 </html>

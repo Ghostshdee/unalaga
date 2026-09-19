@@ -122,12 +122,23 @@ function fillAimagSelects() {
   }
 }
 
-/* Жолооч сонговол үнэ, машины зураг харагдана. Захиалагч сонговол нуугдана. */
+/* Жолооч / захиалагч, тээврийн төрлөөр формыг тааруулна:
+   - [data-driver-only] (үнэ, машины зураг) — жолоочид л
+   - [data-kind="…"] — сонгосон төрөлд л (хүн: суудал, мал: бичвэр, бараа: кг, гэр: 2 чагт)
+   - [data-driver-text] / [data-passenger-text] — асуултын үг үүргээр солигдоно */
 function syncRoleUI() {
   const role = document.querySelector('input[name="role"]:checked');
   const isDriver = role && role.value === 'driver';
   for (const block of document.querySelectorAll('[data-driver-only]')) {
     block.hidden = !isDriver;
+  }
+  const kind = document.querySelector('input[name="kind"]:checked');
+  const k = kind ? kind.value : 'passenger';
+  for (const block of document.querySelectorAll('#orderForm [data-kind]')) {
+    block.hidden = block.dataset.kind !== k;
+  }
+  for (const node of document.querySelectorAll('#orderForm [data-driver-text]')) {
+    node.textContent = isDriver ? node.dataset.driverText : node.dataset.passengerText;
   }
 }
 
@@ -156,10 +167,19 @@ function validateForm() {
   const date = document.getElementById('fDate');
   const time = document.getElementById('fTime');
   const seats = document.getElementById('fSeats');
+  const livestock = document.getElementById('fLivestock');
+  const cargoKg = document.getElementById('fCargoKg');
+  const cargoWhat = document.getElementById('fCargoWhat');
+  const kindInput = document.querySelector('input[name="kind"]:checked');
+  const kind = kindInput ? kindInput.value : 'passenger';
+  const roleInput = document.querySelector('input[name="role"]:checked');
+  const isDriver = !roleInput || roleInput.value === 'driver';
 
   /* Өмнөх тэмдэглэгээг цэвэрлэнэ */
-  for (const el of [from, to, date, time, seats]) el.classList.remove('is-bad');
-  for (const key of ['route', 'date', 'time', 'seats']) {
+  for (const el of [from, to, date, time, seats, livestock, cargoKg, cargoWhat]) {
+    if (el) el.classList.remove('is-bad');
+  }
+  for (const key of ['route', 'date', 'time', 'seats', 'livestock', 'cargoKg', 'cargoWhat']) {
     const box = document.querySelector('[data-err-for="' + key + '"]');
     if (box) box.hidden = true;
   }
@@ -179,10 +199,16 @@ function validateForm() {
     firstBad = to;
   }
 
-  /* Огноо, цаг, хүний тоо — хоосон байж болохгүй */
-  const simple = [[date, 'date'], [time, 'time'], [seats, 'seats']];
+  /* Огноо, цаг + сонгосон төрлийн заавал талбар. Нуугдсан талбарыг шалгахгүй. */
+  const simple = [[date, 'date'], [time, 'time']];
+  if (kind === 'passenger') simple.push([seats, 'seats']);
+  if (kind === 'livestock') simple.push([livestock, 'livestock']);
+  if (kind === 'cargo') {
+    simple.push([cargoKg, 'cargoKg']);
+    if (!isDriver) simple.push([cargoWhat, 'cargoWhat']);   /* жолоочид заавал биш */
+  }
   for (const pair of simple) {
-    if (!pair[0].value) {
+    if (!String(pair[0].value).trim() || (pair[0].type === 'number' && Number(pair[0].value) <= 0)) {
       setFieldError(pair[0], pair[1], ERR_EMPTY);
       if (!firstBad) firstBad = pair[0];
     }
@@ -197,7 +223,8 @@ function clearErrorOnInput(e) {
   const el = e.target;
   if (!el.classList || !el.classList.contains('is-bad')) return;
 
-  const keys = { fFrom: 'route', fTo: 'route', fDate: 'date', fTime: 'time', fSeats: 'seats' };
+  const keys = { fFrom: 'route', fTo: 'route', fDate: 'date', fTime: 'time', fSeats: 'seats',
+    fLivestock: 'livestock', fCargoKg: 'cargoKg', fCargoWhat: 'cargoWhat' };
   const key = keys[el.id];
   if (!key) return;
 
@@ -328,15 +355,9 @@ function initModal() {
     radio.addEventListener('change', syncRoleUI);
   }
 
-  /* Хараахан бэлэн болоогүй тээврийн төрөл */
-  const note = document.getElementById('soonNote');
-  let noteTimer = 0;
-  for (const btn of form.querySelectorAll('[data-soon]')) {
-    btn.addEventListener('click', () => {
-      note.hidden = false;
-      clearTimeout(noteTimer);
-      noteTimer = setTimeout(() => { note.hidden = true; }, 4000);
-    });
+  /* Тээврийн төрөл солигдоход тохирох талбарууд */
+  for (const radio of form.querySelectorAll('input[name="kind"]')) {
+    radio.addEventListener('change', syncRoleUI);
   }
 
   form.addEventListener('input', clearErrorOnInput);
@@ -363,7 +384,10 @@ function initModal() {
 
   /* Mobile доод цэсийн «Захиалга» гэх мэт нэмэлт нээгчид */
   for (const el of document.querySelectorAll('[data-open-order]')) {
-    el.addEventListener('click', openModal);
+    el.addEventListener('click', (e) => {
+      e.preventDefault();   /* sidebar-ын <a href="index.html#order"> — хуудас дахин ачаалахгүй */
+      openModal();
+    });
   }
 
   let busy = false;   /* зураг шахаж байх хооронд давхар дарахаас хамгаална */
@@ -438,6 +462,28 @@ function shrinkPhoto(file) {
   });
 }
 
+function kindOf(fd) {
+  const k = fd.get('kind');
+  return KIND_BADGE[k] ? k : 'passenger';
+}
+
+/* Карт дээрх «хэр их» мөр — төрлөөр.
+   Мал: «5 хонь, 2 ямаа» · Бараа: «500 кг хүртэл · Хүнс» · Гэр: «Гэр, тавилгатай · туслах хүнтэй» */
+function kindCapacity(post) {
+  const isDriver = post.role === 'driver';
+  if (post.kind === 'livestock' && post.livestock) return post.livestock;
+  if (post.kind === 'cargo' && post.cargoKg) {
+    const kg = formatPrice(post.cargoKg).replace(' ₮', '') + ' кг' + (isDriver ? ' хүртэл' : '');
+    return post.cargoWhat ? kg + ' · ' + post.cargoWhat : kg;
+  }
+  if (post.kind === 'moving') {
+    const parts = [post.gherFurniture ? 'Гэр, тавилгатай' : 'Гэр'];
+    if (post.gherHelp) parts.push(isDriver ? 'туслах хүнтэй' : 'туслах хүн хэрэгтэй');
+    return parts.join(' · ');
+  }
+  return '';
+}
+
 /* Формын утгуудаас хадгалах пост объект үүсгэнэ */
 async function readForm(form) {
   const fd = new FormData(form);
@@ -455,6 +501,12 @@ async function readForm(form) {
     date: fd.get('date'),
     time: fd.get('time'),
     seats: Number(fd.get('seats')) || 1,
+    /* Төрөл бүрийн мэдээлэл — сонгоогүй төрлийнх хоосон */
+    livestock: kindOf(fd) === 'livestock' ? String(fd.get('livestock') || '').trim() : '',
+    cargoKg: kindOf(fd) === 'cargo' ? Number(fd.get('cargoKg')) || 0 : 0,
+    cargoWhat: kindOf(fd) === 'cargo' ? String(fd.get('cargoWhat') || '').trim() : '',
+    gherFurniture: kindOf(fd) === 'moving' && fd.get('gherFurniture') === 'on',
+    gherHelp: kindOf(fd) === 'moving' && fd.get('gherHelp') === 'on',
     price: isDriver && fd.get('price') ? Number(fd.get('price')) : 0,
     note: String(fd.get('note') || '').trim(),
     photo: isDriver ? await shrinkPhoto(photoInput.files && photoInput.files[0]) : '',
@@ -532,6 +584,10 @@ function fillForm(form, post) {
   form.dataset.editId = String(post.id);
   const role = form.querySelector('input[name="role"][value="' + post.role + '"]');
   if (role) role.checked = true;
+  const kind = form.querySelector('input[name="kind"][value="' + (post.kind || 'passenger') + '"]');
+  if (kind) kind.checked = true;
+  document.getElementById('fGherFurniture').checked = !!post.gherFurniture;
+  document.getElementById('fGherHelp').checked = !!post.gherHelp;
   const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v == null ? '' : v; };
   set('fFrom', post.from);
   set('fTo', post.to);
@@ -540,6 +596,9 @@ function fillForm(form, post) {
   set('fSeats', post.seats);
   set('fPrice', post.price || '');
   set('fNote', post.note);
+  set('fLivestock', post.livestock);
+  set('fCargoKg', post.cargoKg || '');
+  set('fCargoWhat', post.cargoWhat);
   if (post.photo) {
     const box = document.getElementById('photoPreview');
     box.querySelector('img').src = post.photo;
@@ -708,7 +767,7 @@ function createPost(post) {
 
   const facts = el('div', 'post-facts');
   facts.appendChild(el('span', 'post-capacity',
-    post.capacityText || (isDriver ? post.seats + ' суудал үлдсэн' : post.seats + ' хүн')));
+    post.capacityText || kindCapacity(post) || (isDriver ? post.seats + ' суудал үлдсэн' : post.seats + ' хүн')));
   if (isDriver && post.priceLines) {
     /* Хоёр хэсэгтэй үнэ — «Хүн 25 000 ₮ / Бараа 30 000 ₮» */
     const split = el('span', 'post-price post-price-split');
@@ -1009,6 +1068,42 @@ function initFilters() {
   /* Утсаа хэвтүүлж өргөн болбол дэлгэц дүүрэн хайлтыг хаана */
   mobileQuery.addEventListener('change', () => { if (!mobileQuery.matches) closeSearch(); });
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   МЭДЭГДЭЛ — header-ийн хонх (Фаз 1.4)
+   Мэдэгдлийн систем сервертэй хамт ирнэ. Хуурамч «3» тоог хассан —
+   байхгүй мэдэгдэл харуулах нь итгэл алдагдуулна.
+   ═══════════════════════════════════════════════════════════════════ */
+function initNotif() {
+  const btn = document.querySelector('[data-notif]');
+  if (!btn) return;
+
+  const panel = el('div', 'notif-panel');
+  panel.id = 'notifPanel';
+  panel.hidden = true;
+  panel.setAttribute('role', 'region');
+  panel.setAttribute('aria-label', 'Мэдэгдэл');
+  panel.appendChild(el('p', 'notif-title', 'Одоогоор мэдэгдэл алга'));
+  panel.appendChild(el('p', 'notif-text', 'Хадгалсан жолооч тань шинэ зар нийтлэхэд энд гарах болно.'));
+  btn.parentNode.appendChild(panel);
+
+  const close = () => {
+    if (panel.hidden) return;
+    panel.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  };
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    panel.hidden = !panel.hidden;
+    btn.setAttribute('aria-expanded', panel.hidden ? 'false' : 'true');
+  });
+  document.addEventListener('click', (e) => { if (!panel.contains(e.target)) close(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !panel.hidden) { close(); btn.focus(); }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', initNotif);
 
 /* loadPosts-ийн дараа — хадгалсан постууд ч шүүгдэнэ */
 document.addEventListener('DOMContentLoaded', initFilters);

@@ -278,9 +278,13 @@ function initDrivers() {
   /* Header-ийн хайлт — app.js нь .post-list байхгүй үед энэ event-ийг илгээнэ */
   document.addEventListener('unalaga:search', renderDrivers);
 
-  const q = new URLSearchParams(location.search).get('q');
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q');
   const input = document.getElementById('searchInput');
   if (q && input) input.value = q;
+  /* map.html-ээс ?aimag=Архангай — чиглэлийн шүүлтүүрийг урьдчилж сонгоно */
+  const pickedAimag = params.get('aimag');
+  if (pickedAimag && AIMAGS.indexOf(pickedAimag) !== -1) aimag.value = pickedAimag;
 
   renderDrivers();
 }

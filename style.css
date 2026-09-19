@@ -274,21 +274,26 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   transition: background var(--transition);
 }
 .icon-btn:hover { background: rgba(255, 255, 255, 0.1); }
-.notif-count {
+/* Мэдэгдлийн цонх — хонхны доор хөвнө (DESIGN §4: хөвж байгаа зүйлд л сүүдэр) */
+.header-actions { position: relative; }
+.notif-panel {
   position: absolute;
-  top: 5px;
-  right: 4px;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--red);
-  color: var(--white);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 17px;
-  text-align: center;
-  box-shadow: 0 0 0 2px var(--ink);
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 40;
+  width: min(300px, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-lift);
+}
+.notif-panel[hidden] { display: none; }
+.notif-title { font-weight: 600; }
+.notif-text {
+  margin-top: var(--space-1);
+  font-size: var(--text-small);
+  color: var(--ink-muted);
 }
 
 .avatar {
@@ -1059,6 +1064,57 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   margin-left: var(--space-2);
 }
 
+/* ═══════════════ ЧИГЛЭЛИЙН СХЕМ — map.html (Фаз 1.4) ═══════════════
+   Бодит газрын зураг биш. Дэвсгэр нам гүм, чиглэл хөх, сонгосон нь алтан. */
+.map-wrap,
+.map-pick,
+.map-picked { max-width: 580px; margin-inline: auto; }
+.map-wrap {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.map-svg { display: block; width: 100%; height: auto; }
+.map-land { fill: var(--blue-wash); stroke: var(--line-2); stroke-width: 3; stroke-linejoin: round; }
+.map-route { stroke: var(--blue); stroke-opacity: 0.28; stroke-linecap: round; }
+.map-route.is-picked { stroke: var(--gold); stroke-opacity: 1; }
+.map-aimag { cursor: pointer; outline: none; }
+.map-hit { fill: transparent; }
+.map-dot { fill: var(--surface); stroke: var(--ink-muted); stroke-width: 3; }
+.map-aimag.has-routes .map-dot { fill: var(--blue); stroke: var(--surface); }
+.map-aimag.is-picked .map-dot { fill: var(--gold); stroke: var(--surface); }
+.map-aimag:focus-visible .map-hit { stroke: var(--blue); stroke-width: 4; }
+.map-label {
+  font-family: var(--font-body);
+  font-size: 22px;
+  font-weight: 600;
+  fill: var(--ink-muted);
+  paint-order: stroke;
+  stroke: var(--blue-wash);
+  stroke-width: 6px;
+  pointer-events: none;
+}
+.map-aimag.has-routes .map-label { fill: var(--ink); }
+.map-aimag.is-picked .map-label { fill: var(--ink); font-size: 26px; }
+.map-note {
+  margin-top: var(--space-2);
+  font-size: var(--text-tiny);
+  color: var(--ink-muted);
+  text-align: center;
+}
+.map-pick { margin-top: var(--space-4); }
+.map-list { list-style: none; margin-bottom: var(--space-4); }
+.map-item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-small);
+}
+.map-item-meta { color: var(--ink-muted); white-space: nowrap; }
+
 /* ═══════════════ ШҮҮЛТҮҮР (CLAUDE.md §6-3) ═══════════════
    Карт биш — жагсаалтын дээрх нам гүм мөр. Анхаарал картад үлдэнэ. */
 .post-card[hidden],
@@ -1369,20 +1425,9 @@ select.inp { appearance: none; background: var(--surface) var(--caret) no-repeat
 }
 
 /* Хараахан ажиллахгүй сонголт */
-.pick-card.is-soon { cursor: default; }
-.pick-card.is-soon .pick-in { background: var(--paper); }
-.pick-card.is-soon b { color: var(--ink-muted); }
-.soon {
-  align-self: flex-start;
-  padding: 2px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  font-style: normal;
-  font-size: var(--text-tiny);
-  font-weight: 500;
-  color: var(--ink-muted);
-}
+/* Төрөл бүрийн гэр нүүлгэх чагтууд — бие биетэйгээ ойр */
+.fld[data-kind="moving"] .check { display: flex; min-height: 44px; }   /* нэг мөрөнд нэг — шахцалдахгүй */
+.fld[data-kind][hidden] { display: none; }
 
 /* ── Зураг сонгох ── */
 .file-drop {
@@ -1534,6 +1579,10 @@ body.is-locked { overflow: hidden; }
   .profile-card { padding: var(--space-4); }
   .profile-name { font-size: 20px; }
   .me-actions .btn { flex: 1; }
+  .map-wrap { padding: var(--space-1); }
+  .map-label { font-size: 26px; }
+  .map-aimag.is-picked .map-label { font-size: 30px; }
+  .map-picked .btn { width: 100%; }
   /* Хадгалсан жолооч: «N идэвхтэй зар» дээд мөрөнд, Хасах + Холбогдох доор */
   .saved-list .driver-foot { flex-wrap: wrap; }
   .saved-list .driver-offers { flex-basis: 100%; }
