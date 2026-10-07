@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#0B2545">
   <title>Профайл — Уналага.мн</title>
   <meta name="description" content="Миний зарууд, машин, хадгалсан жолооч.">
+  <!-- Туршилтын хувилбар — хайлтад орохгүй. Фаз 3 (backend) хүртэл, тэр үед авна. -->
+  <meta name="robots" content="noindex">
 
   <!-- Facebook, Messenger-ээр хуваалцахад гарах preview. JS ажиллуулдаггүй
        тул статик утга. Зураг: hero-гийн дүр зураг, 1200×630 (og-image.jpg). -->
@@ -68,6 +70,8 @@
     </div>
   </header>
 
+  <p class="demo-banner"><strong>Туршилтын хувилбар</strong> — зар жолооч нарт хүрэхгүй, зөвхөн энэ төхөөрөмжид хадгалагдана.</p>
+
   <div class="layout">
 
     <!-- ═══════════════ SIDEBAR (6 цэс) ═══════════════ -->
@@ -87,7 +91,14 @@
          profile.js зурна: миний мэдээлэл · машин · зарууд · хадгалсан жолооч.
          Нэвтрэх систем ирэх хүртэл энэ browser-ийн localStorage-д. -->
     <main class="main">
-      <div class="profile" id="profileRoot"></div>
+      <!-- Ачаалж байх skeleton — profile.js зурж дуусахад арилгана (aria-busy) -->
+      <div class="profile" id="profileRoot" aria-busy="true">
+        <div class="driver-skeleton" aria-hidden="true">
+          <div class="driver-skeleton-head"><span class="skel skel-avatar"></span><div class="driver-skeleton-main"><span class="skel skel-name"></span><span class="skel skel-line skel-line-short"></span></div></div>
+          <span class="skel skel-line"></span>
+          <span class="skel skel-btn"></span>
+        </div>
+      </div>
     </main>
   </div>
 

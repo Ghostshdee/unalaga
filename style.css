@@ -210,6 +210,17 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 /* Бараан header дээр хөх хүрээ үл харагдана — алтан (DESIGN §11) */
 .header :focus-visible { outline-color: var(--flag-gold); }
 
+/* ═══════════════ ТУРШИЛТЫН ТУУЗ ═══════════════
+   Backend ирэх (Фаз 3) хүртэл бүх хуудсанд. Sticky биш, хаах товчгүй.
+   Алт том талбайд, улаан яаралтайд хадгалагдсан (DESIGN §2) тул хөх wash. */
+.demo-banner {
+  padding: var(--space-2) max(var(--space-5), calc((100% - var(--shell)) / 2));
+  background: var(--blue-wash);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: var(--text-small);
+}
+
 .logo {
   flex-shrink: 0;
   font-family: var(--font-display);
@@ -477,6 +488,75 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   gap: var(--space-5);
 }
 
+/* ── Ачаалж байгаа skeleton (DESIGN §7) ──────────────────────
+   Spinner биш, картын хэлбэртэй саарал блок. Зөөлөн opacity пульс —
+   зөвхөн opacity тул хуучин утсанд хөнгөн. prefers-reduced-motion үед
+   дээрх глобал дүрэм animation-ийг унтраана → хөдөлгөөнгүй саарал блок. */
+.feed-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 580px;
+  margin: 0 auto var(--space-5);
+}
+.feed-skeleton[hidden] { display: none; }
+
+.post-skeleton {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.post-skeleton-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+.skel {
+  display: block;
+  background: var(--line);
+  border-radius: var(--radius-sm);
+  animation: skel-pulse 1.4s ease-in-out infinite;
+}
+.skel-photo { aspect-ratio: 16 / 7; border-radius: 0; }
+.skel-badge { width: 96px; height: 20px; }
+.skel-line  { height: 14px; width: 100%; }
+.skel-line-short { width: 60%; }
+@keyframes skel-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+/* Жолооч/профайл хуудасны skeleton — .driver-card-тай ижил хэлбэр (hover-гүй).
+   HTML дотор бэлэн тавигдсан тул скрипт татагдах хооронд харагдана;
+   JS зурж дуусахад endBusy() арилгана. Pulse-ийг дээрх .skel-ээс авна. */
+.driver-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.driver-skeleton-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.driver-skeleton-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.skel-avatar { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; }
+.skel-name   { height: 18px; width: 50%; }
+.skel-btn    { width: 140px; height: 44px; border-radius: var(--radius-md); }
+
 /* Ердийн карт — сүүдэргүй, зөвхөн хүрээтэй (DESIGN §4) */
 .post-card {
   display: flex;
@@ -743,14 +823,18 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   font-size: var(--text-small);
   color: var(--ink-muted);
 }
+/* Чипүүд (Шинэ гишүүн, Жишээ) явган мөрөнд шахагдахгүй — шинэ мөрөнд шилжинэ */
+.person-meta .chip-sample { margin-left: var(--space-1); }
 /* Үнэлгээний тоо нь тод текст (уншигдахуйц), од нь алтан */
 .rating {
   color: var(--ink);
   font-weight: 600;
 }
 .star { color: var(--gold); }
-/* Шинэ жолооч — "0 үнэлгээ" биш, саарал чип (DESIGN §6) */
-.chip-new {
+/* Шинэ жолооч — "0 үнэлгээ" биш, саарал чип (DESIGN §6).
+   .chip-sample — «Жишээ» / «Жишээ зар» тэмдэг, ижил загвар */
+.chip-new,
+.chip-sample {
   display: inline-block;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
@@ -767,6 +851,12 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 .page-head { margin-bottom: var(--space-5); }
 .page-head .section-title { margin-bottom: var(--space-1); }
 .page-sub { color: var(--ink-muted); }
+/* «Доорх зүйлс жишээ» — page-sub-ийн дор нэг мөр */
+.sample-note {
+  margin-top: var(--space-1);
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+}
 
 .driver-tools {
   display: grid;
@@ -937,8 +1027,8 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 }
 .profile-note {
   margin-top: calc(-1 * var(--space-2));
-  font-size: var(--text-tiny);
-  color: var(--ink-muted);
+  font-size: var(--text-body);   /* «жишээ» гэсэн анхааруулга — 12px, саарал биш, уншигдах ёстой */
+  color: var(--ink);
 }
 
 .profile-section {
@@ -1235,6 +1325,40 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   visibility: visible;
   transform: translate(-50%, 0);
 }
+/* Алдаа, сануулга — ногоон «амжилт» шиг харагдахгүй. Улаан биш (DESIGN §2) */
+.toast.is-notice { background: var(--ink); }
+
+/* ═══════════════ ӨӨРИЙН МЭДЭГДЭЛ ═══════════════
+   Алдааны төлөв (app.js renderErrorState) ба интернэт тасрах мэдэгдэл
+   (initOfflineNotice). Улаан хэрэглэхгүй — DESIGN §2 улааныг яаралтай зүйлд
+   хадгалсан. Хөдөлгөөнгүй: гэнэт гарч, гэнэт арилна. */
+.feed-error { margin-bottom: var(--space-5); }
+
+.offline-bar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 60;                     /* доод цэс (30)-ээс дээр, toast (70)-оос доор */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--ink);
+  color: var(--white);
+  font-size: var(--text-small);
+}
+.offline-bar[hidden] { display: none; }
+.offline-bar .btn {
+  flex-shrink: 0;
+  background: transparent;
+  border-color: var(--white);
+  color: var(--white);
+  font-size: var(--text-small);
+}
+.offline-bar .btn:hover { background: var(--ink-lift); }
+.offline-bar :focus-visible { outline-color: var(--flag-gold); }
+/* Мэдэгдлийн ард контент үлдэхгүй */
+body.is-offline .main { padding-bottom: calc(var(--space-6) + 76px); }
 
 /* ═══════════════ ДООД ЦЭС — зөвхөн мобайлд (DESIGN §8) ═══════════════ */
 .bottom-nav { display: none; }
@@ -1495,6 +1619,7 @@ body.is-locked { overflow: hidden; }
     gap: var(--space-3);
     padding-inline: var(--space-3);
   }
+  .demo-banner { padding-inline: var(--space-3); }
   .search { display: none; }   /* оронд нь хайлтын дүрс → дэлгэц дүүрэн */
   .icon-btn.search-open { display: grid; }
 
@@ -1602,6 +1727,13 @@ body.is-locked { overflow: hidden; }
 
   /* Доод цэсийн ард контент үлдэхгүй */
   .main { padding: var(--space-4) var(--space-3) calc(64px + var(--space-5) + env(safe-area-inset-bottom)); }
+
+  /* Интернэтгүй мэдэгдэл доод цэсний дээр байрлана, контентыг хаахгүй */
+  .offline-bar {
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    padding-inline: var(--space-4);
+  }
+  body.is-offline .main { padding-bottom: calc(64px + var(--space-5) + 76px + env(safe-area-inset-bottom)); }
 
   /* ── Доод цэс: 5 товч, хуруунд 64px өндөр (DESIGN §8) ── */
   .bottom-nav {

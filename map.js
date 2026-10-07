@@ -173,7 +173,7 @@ function renderPicked(name, routes) {
     const li = el('li', 'map-item');
     li.appendChild(el('span', 'driver-route-city', name + ' — ' + other));
     const parts = [];
-    if (r.drivers.size) parts.push(r.drivers.size + ' жолооч');
+    if (r.drivers.size) parts.push(r.drivers.size + ' жишээ жолооч');
     if (r.posts) parts.push(r.posts + ' миний зар');
     li.appendChild(el('span', 'map-item-meta', parts.join(' · ')));
     ul.appendChild(li);
@@ -183,7 +183,7 @@ function renderPicked(name, routes) {
   const drivers = new Set();
   for (const r of mine) r.drivers.forEach((id) => drivers.add(id));
   if (drivers.size) {
-    const a = el('a', 'btn btn-primary', name + ' руу явдаг ' + drivers.size + ' жолооч');
+    const a = el('a', 'btn btn-primary', name + ' руу явдаг ' + drivers.size + ' жишээ жолооч');
     a.href = 'drivers.html?aimag=' + encodeURIComponent(name);
     box.appendChild(a);
   }

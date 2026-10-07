@@ -408,21 +408,40 @@ function initModal() {
         if (!post.photo && form.dataset.keepPhoto) post.photo = old.photo;
       }
       const saved = updatePost(post);
+      if (saved === 'failed') {
+        /* Хадгалагдаагүй — modal нээлттэй, оруулсан утга хэвээр, карт өөрчлөгдөхгүй */
+        showStorageWriteError();
+        busy = false;
+        return;
+      }
+      if (saved === 'no-photo') post.photo = '';
       replacePostCard(post);
       closeModal();
       resetForm(form);
-      showToast(saved ? 'Зар шинэчлэгдлээ' : 'Зар шинэчлэгдлээ. Зураг хэт том тул хадгалагдсангүй', myPosts);
+      showToast(saved === 'ok' ? 'Зар шинэчлэгдлээ' : 'Зар шинэчлэгдлээ. Зураг хэт том тул хадгалагдсангүй',
+        myPosts, saved !== 'ok');
       busy = false;
       return;
     }
 
     const saved = savePost(post);
+    if (saved === 'failed') {
+      /* Хадгалагдаагүй — карт нэмэхгүй, modal нээлттэй, оруулсан утга хэвээр */
+      showStorageWriteError();
+      busy = false;
+      return;
+    }
+    if (saved === 'no-photo') post.photo = '';
     clearFilters();   /* шүүлтүүр идэвхтэй байсан ч шинэ зар заавал харагдана */
     prependPost(post);
 
     closeModal();
     resetForm(form);
-    showToast(saved ? 'Захиалга нийтлэгдлээ' : 'Захиалга нийтлэгдлээ. Зураг хэт том тул хадгалагдсангүй', myPosts);
+    /* Сервер байхгүй — зар зөвхөн энэ төхөөрөмжид хадгалагдана, жолооч нарт хүрэхгүй */
+    showToast(saved === 'ok'
+      ? 'Захиалга энэ төхөөрөмжид хадгалагдлаа (туршилт)'
+      : 'Захиалга энэ төхөөрөмжид хадгалагдлаа (туршилт). Зураг хэт том тул хадгалагдсангүй',
+      myPosts, saved !== 'ok');
     busy = false;
   });
 }
@@ -524,9 +543,23 @@ const SAVED_KEY = 'unalaga_saved_drivers';
 /* Машины төрөл → карт дээрх дүрс (style.css .veh-*) */
 const VEH_BY_TYPE = { sedan: 'veh-sedan', van: 'veh-van', pickup: 'veh-pickup', truck: 'veh-pickup' };
 
+/* localStorage хаалттай (incognito, хөтчийн тохиргоо) үед getItem алдаа шидэнэ.
+   Үүнийг эвдэрсэн JSON-оос ялгаж, «зар алга» гэж худал хэлэхгүйн тулд тэмдэглэнэ.
+   Дуудагч тал уншихын өмнө false болгож, дараа нь шалгана. */
+let storageBroken = false;
+
+function safeGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (err) {
+    storageBroken = true;
+    return null;
+  }
+}
+
 function readJSON(key, fallback) {
   try {
-    const v = JSON.parse(localStorage.getItem(key) || 'null');
+    const v = JSON.parse(safeGet(key) || 'null');
     return v == null ? fallback : v;
   } catch (err) {
     return fallback;
@@ -568,13 +601,14 @@ function isSaved(id) {
   return readSaved().indexOf(id) !== -1;
 }
 
-/* Хадгалах ↔ хасах. Буцаах утга: одоо хадгалагдсан эсэх */
+/* Хадгалах ↔ хасах. Буцаах утга: одоо хадгалагдсан эсэх (true/false),
+   бичиж чадаагүй бол null — дуудагч алдааг мэдээлнэ. */
 function toggleSaved(id) {
   const list = readSaved();
   const at = list.indexOf(id);
   if (at === -1) list.unshift(id);
   else list.splice(at, 1);
-  writeJSON(SAVED_KEY, list);
+  if (!writeJSON(SAVED_KEY, list)) return null;
   return at === -1;
 }
 
@@ -611,16 +645,18 @@ function fillForm(form, post) {
   syncRoleUI();
 }
 
-/* localStorage доторх зарыг солино (байрлал нь хэвээр) */
+/* localStorage доторх зарыг солино (байрлал нь хэвээр).
+   Буцаах утга: 'ok' — бүрэн, 'no-photo' — зураггүй хадгалагдсан, 'failed' — огт хадгалагдаагүй */
 function updatePost(post) {
   const list = readPosts().map((p) => (String(p.id) === String(post.id) ? post : p));
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    return true;
+    return 'ok';
   } catch (err) {
-    post.photo = '';
-    writeJSON(STORAGE_KEY, list.map((p) => (String(p.id) === String(post.id) ? post : p)));
-    return false;
+    if (!post.photo) return 'failed';
+    const bare = Object.assign({}, post, { photo: '' });
+    const ok = writeJSON(STORAGE_KEY, list.map((p) => (String(p.id) === String(post.id) ? bare : p)));
+    return ok ? 'no-photo' : 'failed';
   }
 }
 
@@ -636,27 +672,27 @@ function replacePostCard(post) {
 
 function readPosts() {
   try {
-    const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const list = JSON.parse(safeGet(STORAGE_KEY) || '[]');
     return Array.isArray(list) ? list : [];
   } catch (err) {
-    return [];   /* эвдэрсэн өгөгдөл эсвэл хаалттай storage — хоосон гэж үзнэ */
+    return [];   /* эвдэрсэн өгөгдөл — хоосон гэж үзнэ. Хаалттай storage-ийг storageBroken ялгана */
   }
 }
 
 /* localStorage-д хамгийн эхэнд нэмнэ. Зай хүрэлцэхгүй бол зураггүйгээр
-   дахин оролдоно. Буцаах утга: зурагтай нь бүрэн хадгалагдсан эсэх. */
+   дахин оролдоно. Буцаах утга: 'ok' — бүрэн хадгалагдсан,
+   'no-photo' — зураггүйгээр хадгалагдсан, 'failed' — огт хадгалагдаагүй. */
 function savePost(post) {
   const list = readPosts();
   list.unshift(post);
   list.length = Math.min(list.length, MAX_POSTS);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    return true;
+    return 'ok';
   } catch (err) {
-    if (!post.photo) return false;
+    if (!post.photo) return 'failed';
     list[0] = Object.assign({}, post, { photo: '' });
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch (err2) { /* storage хаалттай */ }
-    return false;
+    return writeJSON(STORAGE_KEY, list) ? 'no-photo' : 'failed';
   }
 }
 
@@ -743,9 +779,14 @@ function createPost(post) {
   badges.appendChild(el('span', 'badge ' + kind[0], kind[1]));
   if (!isDriver) badges.appendChild(el('span', 'badge badge-request', 'Унаа хэрэгтэй'));
   head.appendChild(badges);
-  const time = el('span', 'post-time', formatAgo(post.createdAt));
-  time.dataset.ts = post.createdAt;
-  head.appendChild(time);
+  if (post.sample) {
+    /* Жишээ зар — хуурамч «N минутын өмнө» биш. data-ts өгөхгүй тул 60 секундын шинэчлэл хөндөхгүй */
+    head.appendChild(el('span', 'post-time chip-sample', 'Жишээ зар'));
+  } else {
+    const time = el('span', 'post-time', formatAgo(post.createdAt));
+    time.dataset.ts = post.createdAt;
+    head.appendChild(time);
+  }
   body.appendChild(head);
 
   /* Чиглэл — картын хамгийн том элемент (DESIGN §1). Зай тооцоолох
@@ -814,15 +855,139 @@ function prependPost(post) {
   list.insertBefore(createPost(post), list.firstElementChild);
 }
 
+/* Ачаалж байх skeleton — жагсаалтыг aria-busy болгож, картын хэлбэртэй блок харуулна */
+function showFeedSkeleton(list) {
+  const skel = document.getElementById('feedSkeleton');
+  list.setAttribute('aria-busy', 'true');
+  if (skel) skel.hidden = false;
+}
+
+function hideFeedSkeleton(list) {
+  const skel = document.getElementById('feedSkeleton');
+  list.removeAttribute('aria-busy');
+  if (skel) skel.hidden = true;
+}
+
+/* HTML дотор бэлэн тавьсан skeleton-ийг JS зурж дуусахад арилгана.
+   aria-busy-г авснаар дэлгэц уншигчид агуулга бэлэн боллоо гэж мэднэ. */
+function endBusy(node) {
+  if (!node) return;
+  node.removeAttribute('aria-busy');
+  for (const s of node.querySelectorAll('.driver-skeleton')) s.remove();
+}
+
+/* Хоёр төрлийн алдааны үг — DESIGN §7 «юу болсныг хэл, юу хийхийг заа».
+   Сүлжээний үг зөвхөн сүлжээ тасарсан үед, storage-ийнх нь хөтчийн хориг үед. */
+const NETWORK_ERROR = {
+  title: 'Холболт тасарлаа.',
+  text: 'Интернэтээ шалгаад дахин оролдоно уу.'
+};
+const STORAGE_ERROR = {
+  title: 'Хадгалсан мэдээлэл уншигдсангүй.',
+  text: 'Хөтчийн хувийн (incognito) горимыг унтрааж дахин оролдоно уу.'
+};
+/* Бичих алдаа — STORAGE_ERROR-ийн гарчиг «уншигдсангүй» тул энд тохирохгүй */
+const STORAGE_WRITE_ERROR = {
+  text: 'Хадгалж чадсангүй. Хөтчийн хувийн (incognito) горимыг унтрааж, эсвэл хуучин зараа устгаад дахин оролдоно уу.'
+};
+
+/* Хадгалалт бүтэлгүйтэхэд — амжилттай гэж худлаа хэлэхгүй */
+function showStorageWriteError() {
+  showToast(STORAGE_WRITE_ERROR.text, null, true);
+}
+
+/* Дахин ашиглагдах алдааны төлөв. .feed-empty загвартай (улаан биш — DESIGN §2).
+   opts: { title, text, onRetry } — title/text өгөөгүй бол сүлжээний үг. */
+function renderErrorState(container, opts) {
+  const o = opts || {};
+  const box = el('div', 'feed-empty feed-error');
+  box.setAttribute('role', 'alert');
+  box.appendChild(el('p', 'feed-empty-title', o.title || NETWORK_ERROR.title));
+  box.appendChild(el('p', 'feed-empty-text', o.text || NETWORK_ERROR.text));
+  if (typeof o.onRetry === 'function') {
+    const actions = el('div', 'feed-empty-actions');
+    const retry = el('button', 'btn btn-primary', 'Дахин оролдох');
+    retry.type = 'button';
+    retry.addEventListener('click', o.onRetry);
+    actions.appendChild(retry);
+    box.appendChild(actions);
+  }
+  container.appendChild(box);
+  return box;
+}
+
+/* Интернэт тасрахад доод талд мэдэгдэл. Сайт өөрөө сүлжээ хэрэглэдэггүй тул
+   ачаалсан хуудсыг эвдэхгүй — зөвхөн мэдээлнэ. Бүх хуудас app.js ачаалдаг. */
+function initOfflineNotice() {
+  const bar = el('div', 'offline-bar');
+  bar.setAttribute('role', 'status');
+  bar.hidden = true;
+  const text = el('span', 'offline-text', NETWORK_ERROR.title + ' ' + NETWORK_ERROR.text);
+  const retry = el('button', 'btn', 'Дахин оролдох');
+  retry.type = 'button';
+  bar.appendChild(text);
+  bar.appendChild(retry);
+  document.body.appendChild(bar);
+
+  function show() {
+    text.textContent = NETWORK_ERROR.title + ' ' + NETWORK_ERROR.text;
+    bar.hidden = false;
+    document.body.classList.add('is-offline');
+  }
+  function hide() {
+    bar.hidden = true;
+    document.body.classList.remove('is-offline');
+  }
+
+  retry.addEventListener('click', () => {
+    if (navigator.onLine) hide();
+    else text.textContent = 'Интернэт холбогдоогүй хэвээр байна.';
+  });
+  window.addEventListener('offline', show);
+  window.addEventListener('online', hide);
+  if (!navigator.onLine) show();
+}
+
+document.addEventListener('DOMContentLoaded', initOfflineNotice);
+
+/* Хадгалсан зарыг жагсаалтын эхэнд зурна. storage хаалттай бол «зар алга» гэж
+   худал хэлэхгүй — жагсаалтын дээр алдааны төлөв гаргана (доорх жишээ зар статик). */
+function renderSavedPosts(list) {
+  let slot = document.getElementById('feedError');
+  if (!slot) {
+    slot = el('div');
+    slot.id = 'feedError';
+    list.parentNode.insertBefore(slot, list);
+  }
+  slot.textContent = '';
+  storageBroken = false;
+
+  showFeedSkeleton(list);
+  try {
+    const posts = readPosts();
+    if (storageBroken) {
+      renderErrorState(slot, {
+        title: STORAGE_ERROR.title,
+        text: STORAGE_ERROR.text,
+        onRetry: () => renderSavedPosts(list)
+      });
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const post of posts) {
+      if (post && post.from && post.to) frag.appendChild(createPost(post));
+    }
+    list.insertBefore(frag, list.firstElementChild);
+  } finally {
+    hideFeedSkeleton(list);
+  }
+}
+
 /* Хуудас ачаалахад хадгалсан постууд эхэнд, дараа нь 8 жишээ пост */
 function loadPosts() {
   const list = document.querySelector('.post-list:not(.profile-posts)');
   if (!list) return;
-  const frag = document.createDocumentFragment();
-  for (const post of readPosts()) {
-    if (post && post.from && post.to) frag.appendChild(createPost(post));
-  }
-  list.insertBefore(frag, list.firstElementChild);
+  renderSavedPosts(list);
 
   /* «Дөнгөж сая» минут тутамд «1 минутын өмнө» болж шинэчлэгдэнэ */
   setInterval(() => {
@@ -853,10 +1018,11 @@ function resetForm(form) {
   syncRoleUI();
 }
 
-/* Дээд талын ногоон мэдэгдэл — 3 секундын дараа арилна (BUILD §4).
-   link = { href, label } өгвөл дарах хугацаа хэрэгтэй тул 6 секунд. */
+/* Дээд талын мэдэгдэл — 3 секундын дараа арилна (BUILD §4). Ногоон нь амжилт.
+   link = { href, label } өгвөл дарах хугацаа хэрэгтэй тул 6 секунд.
+   notice = true бол бараан хөх (алдаа, сануулга — ногоон «амжилт» шиг харагдахгүй), 6 секунд. */
 let toastTimer = 0;
-function showToast(text, link) {
+function showToast(text, link, notice) {
   let toast = document.getElementById('toast');
   if (!toast) {
     toast = el('div', 'toast');
@@ -872,9 +1038,10 @@ function showToast(text, link) {
     a.href = link.href;
     toast.appendChild(a);
   }
+  toast.classList.toggle('is-notice', !!notice);
   toast.classList.add('is-on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('is-on'), link ? 6000 : 3000);
+  toastTimer = setTimeout(() => toast.classList.remove('is-on'), link || notice ? 6000 : 3000);
 }
 
 document.addEventListener('DOMContentLoaded', loadPosts);
@@ -1084,7 +1251,7 @@ function initNotif() {
   panel.setAttribute('role', 'region');
   panel.setAttribute('aria-label', 'Мэдэгдэл');
   panel.appendChild(el('p', 'notif-title', 'Одоогоор мэдэгдэл алга'));
-  panel.appendChild(el('p', 'notif-text', 'Хадгалсан жолооч тань шинэ зар нийтлэхэд энд гарах болно.'));
+  panel.appendChild(el('p', 'notif-text', 'Мэдэгдэл туршилтын хувилбарт ажиллахгүй.'));
   btn.parentNode.appendChild(panel);
 
   const close = () => {
@@ -1107,3 +1274,11 @@ document.addEventListener('DOMContentLoaded', initNotif);
 
 /* loadPosts-ийн дараа — хадгалсан постууд ч шүүгдэнэ */
 document.addEventListener('DOMContentLoaded', initFilters);
+
+/* «Холбогдох» / «Залгах» — жишээ өгөгдөлд бодит дугаар алга, товч юу ч хийхгүй байж
+   болохгүй. Нэг delegation нь бүх хуудас, динамикаар үүссэн картыг хамарна. */
+document.addEventListener('click', (e) => {
+  if (e.target.closest('.btn-contact')) {
+    showToast('Жишээ зар — холбогдох боломжгүй', null, true);
+  }
+});

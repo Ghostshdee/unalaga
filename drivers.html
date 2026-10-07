@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#0B2545">
   <title>Жолооч хайх — Уналага.мн</title>
   <meta name="description" content="Таны чиглэлд байнга явдаг жолоочийг аймаг, машины төрөл, үнэлгээгээр олоод шууд холбогдоорой.">
+  <!-- Туршилтын хувилбар — хайлтад орохгүй. Фаз 3 (backend) хүртэл, тэр үед авна. -->
+  <meta name="robots" content="noindex">
 
   <!-- Facebook, Messenger-ээр хуваалцахад гарах preview. JS ажиллуулдаггүй
        тул статик утга. Зураг: hero-гийн дүр зураг, 1200×630 (og-image.jpg). -->
@@ -68,6 +70,8 @@
     </div>
   </header>
 
+  <p class="demo-banner"><strong>Туршилтын хувилбар</strong> — зар жолооч нарт хүрэхгүй, зөвхөн энэ төхөөрөмжид хадгалагдана.</p>
+
   <div class="layout">
 
     <!-- ═══════════════ SIDEBAR (6 цэс) ═══════════════ -->
@@ -90,6 +94,7 @@
       <header class="page-head">
         <h1 class="section-title">Жолооч хайх</h1>
         <p class="page-sub">Таны чиглэлд байнга явдаг жолоочийг олоод шууд холбогдоорой.</p>
+        <p class="sample-note">Доорх жолооч нар жишээ — бодит хүн биш.</p>
       </header>
 
       <div class="driver-tools">
@@ -124,11 +129,28 @@
 
       <p class="feed-count" id="driverCount" aria-live="polite"></p>
 
-      <div class="driver-list"></div>
+      <!-- Ачаалж байх skeleton — drivers.js зурж дуусахад арилгана (aria-busy) -->
+      <div class="driver-list" aria-busy="true">
+        <div class="driver-skeleton" aria-hidden="true">
+          <div class="driver-skeleton-head"><span class="skel skel-avatar"></span><div class="driver-skeleton-main"><span class="skel skel-name"></span><span class="skel skel-line skel-line-short"></span></div></div>
+          <span class="skel skel-line"></span>
+          <span class="skel skel-btn"></span>
+        </div>
+        <div class="driver-skeleton" aria-hidden="true">
+          <div class="driver-skeleton-head"><span class="skel skel-avatar"></span><div class="driver-skeleton-main"><span class="skel skel-name"></span><span class="skel skel-line skel-line-short"></span></div></div>
+          <span class="skel skel-line"></span>
+          <span class="skel skel-btn"></span>
+        </div>
+        <div class="driver-skeleton" aria-hidden="true">
+          <div class="driver-skeleton-head"><span class="skel skel-avatar"></span><div class="driver-skeleton-main"><span class="skel skel-name"></span><span class="skel skel-line skel-line-short"></span></div></div>
+          <span class="skel skel-line"></span>
+          <span class="skel skel-btn"></span>
+        </div>
+      </div>
 
       <div class="feed-empty" id="driverEmpty" hidden>
         <p class="feed-empty-title">Энэ шүүлтүүрт тохирох жолооч алга.</p>
-        <p class="feed-empty-text">Захиалга үүсгэвэл тэр чиглэлийн жолооч нар харах болно.</p>
+        <p class="feed-empty-text">Шүүлтүүрээ арилгаж үзнэ үү. Туршилтын хувилбарт захиалга жолооч нарт хүрэхгүй.</p>
         <div class="feed-empty-actions">
           <a class="btn btn-primary" href="index.html#order">Захиалга үүсгэх</a>
           <button class="btn btn-ghost" type="button" id="driverClear">Шүүлтүүр арилгах</button>

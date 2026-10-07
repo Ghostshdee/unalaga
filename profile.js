@@ -91,7 +91,7 @@ function renderInfoForm(card, p) {
   form.appendChild(field('Нэр', input('meName', 'text', p.name, { autocomplete: 'name', maxlength: '40' })));
 
   const phone = input('mePhone', 'tel', p.phone ? formatPhone(p.phone) : '', {
-    autocomplete: 'tel', inputmode: 'numeric', placeholder: '9911-2233', maxlength: '9'
+    autocomplete: 'tel', inputmode: 'numeric', placeholder: '0000-0000', maxlength: '9'
   });
   const phoneCell = field('Утас', phone);
   const phoneErr = el('p', 'fld-err', '8 оронтой дугаар оруулна уу');
@@ -182,7 +182,7 @@ function renderInfoForm(card, p) {
         livestockBox: cb.checked
       } : null
     };
-    saveProfile(next);
+    if (!saveProfile(next)) { showStorageWriteError(); return; }   /* бичиж чадаагүй — худлаа «хадгалагдлаа» гэхгүй */
     renderAll();
     showToast('Мэдээлэл хадгалагдлаа');
     const edit = document.getElementById('profileEdit');
@@ -200,6 +200,11 @@ function renderCarSection(p) {
   const car = p.car;
   if (!car || !car.name) {
     box.appendChild(el('p', 'profile-empty', 'Машинаа нэмбэл зар бүр дээр машины нэр автоматаар гарна.'));
+    const add = el('button', 'btn btn-ghost', 'Машин нэмэх');
+    add.type = 'button';
+    /* Машины талбар «Миний мэдээлэл»-ийн засах формд байдаг */
+    add.addEventListener('click', () => renderInfoForm(document.getElementById('profileInfo'), readProfile()));
+    box.appendChild(add);
     return box;
   }
   const row = el('div', 'driver-car');
@@ -234,7 +239,7 @@ function renderMyPosts() {
     del.addEventListener('click', () => {
       /* Буцаах боломжгүй тул нэг удаа асууна */
       if (!window.confirm(post.from + ' — ' + post.to + ' зарыг устгах уу?')) return;
-      deletePost(post.id);
+      if (!deletePost(post.id)) { showStorageWriteError(); return; }
       renderAll();
       showToast('Зар устгагдлаа');
       const h = document.querySelector('#myPosts .profile-h2');
@@ -270,7 +275,7 @@ function renderSaved() {
     remove.type = 'button';
     remove.setAttribute('aria-label', d.name + '-ийг хадгалсан жагсаалтаас хасах');
     remove.addEventListener('click', () => {
-      toggleSaved(d.id);
+      if (toggleSaved(d.id) === null) { showStorageWriteError(); return; }
       renderAll();
       showToast('Хадгалсан жагсаалтаас хасагдлаа');
     });
@@ -284,8 +289,20 @@ function renderSaved() {
 function renderAll() {
   const root = document.getElementById('profileRoot');
   if (!root) return;
+  storageBroken = false;
   const p = readProfile();
   root.textContent = '';
+  endBusy(root);
+
+  /* Хаалттай storage-д «зар нийтлээгүй байна» гэж худал хэлэхгүй */
+  if (storageBroken) {
+    renderErrorState(root, {
+      title: STORAGE_ERROR.title,
+      text: STORAGE_ERROR.text,
+      onRetry: renderAll
+    });
+    return;
+  }
 
   const card = el('div', 'profile-card');
   card.id = 'profileInfo';

@@ -30,6 +30,7 @@ function saveButton(d) {
   };
   btn.addEventListener('click', () => {
     const on = toggleSaved(d.id);
+    if (on === null) { showStorageWriteError(); return; }   /* бичиж чадаагүй — амжилттай гэж хэлэхгүй */
     paint();
     showToast(on ? 'Жолооч хадгалагдлаа' : 'Хадгалсан жагсаалтаас хасагдлаа',
       on ? { href: 'profile.html#mySaved', label: 'Харах' } : null);
@@ -64,10 +65,9 @@ function renderIntro(d) {
 
   /* Итгэлийн мэдээлэл — өнгө биш, текстээр (DESIGN §11) */
   const trust = el('ul', 'trust-list');
+  /* Жишээ жолооч — итгэлийн мэдээлэл зохиомол тул баталгаа мэт харуулахгүй (kharuul Б4, Фаз 4-т бодит болно) */
   const items = [
-    [d.verified ? 'ok' : 'no', d.verified ? 'Жолооны үнэмлэх шалгасан' : 'Үнэмлэх хараахан шалгаагүй'],
-    ['info', d.since + ' оноос гишүүн'],
-    ['info', 'Ихэвчлэн ' + d.reply.charAt(0).toLowerCase() + d.reply.slice(1) + ' хариулдаг']
+    ['no', 'Жишээ жолооч — үнэмлэх шалгагдаагүй, мэдээлэл зохиомол']
   ];
   for (const item of items) {
     const li = el('li', 'trust-item trust-' + item[0], item[1]);
@@ -112,7 +112,7 @@ function renderCar(d) {
 function renderPosts(d) {
   const box = section('Идэвхтэй зар' + (d.posts.length ? ' (' + d.posts.length + ')' : ''));
   if (!d.posts.length) {
-    box.appendChild(el('p', 'profile-empty', 'Одоогоор идэвхтэй зар алга. Залгаад чиглэлээ тохирч болно.'));
+    box.appendChild(el('p', 'profile-empty', 'Одоогоор идэвхтэй зар алга.'));
     return box;
   }
   const list = el('div', 'post-list profile-posts');
@@ -120,6 +120,7 @@ function renderPosts(d) {
     const post = Object.assign({}, p, {
       id: d.id + '-' + p.to,
       role: 'driver',
+      sample: true,
       createdAt: Date.now() - p.ago * 60000,
       vehicle: { veh: d.veh, name: p.vehicleName || d.car },
       hidePerson: true
@@ -192,6 +193,10 @@ function renderMissing(root) {
 function initDriverPage() {
   const root = document.getElementById('driverProfile');
   if (!root) return;
+
+  /* HTML дотор бэлэн тавьсан skeleton-ийг арилгана — олдоогүй салаа ч дайрна */
+  root.textContent = '';
+  endBusy(root);
 
   const d = findDriver();
   if (!d) {

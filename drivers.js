@@ -120,12 +120,13 @@ function driverUrl(d) {
   return 'driver.html?id=' + encodeURIComponent(d.id);
 }
 
-/* «Холбогдох» — утсаар шууд залгана (tel:). Хөдөөд хамгийн ойлгомжтой. */
+/* «Холбогдох» — одоогоор жишээ өгөгдөл тул залгагдахгүй товч (tel: холбоос БИШ).
+   Хуурамч 0000-xxxx дугаар руу залгуулж болохгүй. Бодит дугаар орсны дараа tel: болгоно. */
 function callButton(d, label) {
-  const a = el('a', 'btn btn-contact', label);
-  a.href = 'tel:' + d.phone.replace(/\D/g, '');
-  a.setAttribute('aria-label', label + ': ' + d.name + ', ' + d.phone + ' (жишээ дугаар)');
-  return a;
+  const btn = el('button', 'btn btn-contact', label);
+  btn.type = 'button';
+  btn.setAttribute('aria-label', label + ': ' + d.name + ' (жишээ зар)');
+  return btn;
 }
 
 /* «4.8 ★ · 124 аялал» эсвэл «Шинэ гишүүн» чип (DESIGN §6) */
@@ -133,6 +134,8 @@ function driverMeta(d) {
   const meta = el('p', 'person-meta');
   if (!d.trips) {
     meta.appendChild(el('span', 'chip-new', 'Шинэ гишүүн'));
+    meta.appendChild(document.createTextNode(' '));
+    meta.appendChild(el('span', 'chip-sample', 'Жишээ'));
     return meta;
   }
   meta.appendChild(el('span', 'rating', d.rating.toFixed(1)));
@@ -140,7 +143,8 @@ function driverMeta(d) {
   const star = el('span', 'star', '★');
   star.setAttribute('aria-hidden', 'true');
   meta.appendChild(star);
-  meta.appendChild(document.createTextNode(' · ' + d.trips + ' аялал'));
+  meta.appendChild(document.createTextNode(' · ' + d.trips + ' аялал '));
+  meta.appendChild(el('span', 'chip-sample', 'Жишээ'));   /* зохиомол жолооч — Фаз 3 хүртэл (kharuul Б3) */
   return meta;
 }
 
@@ -239,6 +243,7 @@ function renderDrivers() {
   const frag = document.createDocumentFragment();
   for (const d of list) frag.appendChild(createDriverCard(d));
   box.appendChild(frag);
+  endBusy(box);   /* HTML дотор бэлэн тавьсан skeleton-ийн aria-busy */
 
   const countText = list.length + ' жолооч олдлоо';
   document.getElementById('driverCount').textContent = countText;

@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#0B2545">
   <title>Уналага.мн — тээвэр захиалах</title>
   <meta name="description" content="Хөдөө орон нутгийн тээвэр. Сул суудал, хоосон машиныг тээвэр хэрэгтэй хүнтэй холбоно — хүн, мал, бараа, гэр нүүлгэх.">
+  <!-- Туршилтын хувилбар — хайлтад орохгүй. Фаз 3 (backend) хүртэл, тэр үед авна. -->
+  <meta name="robots" content="noindex">
 
   <!-- Facebook, Messenger-ээр хуваалцахад гарах preview. JS ажиллуулдаггүй
        тул статик утга. Зураг: hero-гийн дүр зураг, 1200×630 (og-image.jpg). -->
@@ -68,6 +70,8 @@
       <span class="avatar" title="Профайл">Б</span>
     </div>
   </header>
+
+  <p class="demo-banner"><strong>Туршилтын хувилбар</strong> — зар жолооч нарт хүрэхгүй, зөвхөн энэ төхөөрөмжид хадгалагдана.</p>
 
   <div class="layout">
 
@@ -184,10 +188,38 @@
       <!-- Хоосон үед юу хийхийг заана (DESIGN §7) -->
       <div class="feed-empty" id="feedEmpty" hidden>
         <p class="feed-empty-title">Энэ чиглэлд одоогоор зар алга.</p>
-        <p class="feed-empty-text">Та захиалга үүсгэвэл жолооч нар харах болно.</p>
+        <p class="feed-empty-text">Туршилтын хувилбарт захиалга зөвхөн энэ төхөөрөмжид хадгалагдана.</p>
         <div class="feed-empty-actions">
           <button class="btn btn-primary" type="button" data-open-order>Захиалга үүсгэх</button>
           <button class="btn btn-ghost" type="button" data-clear-filters>Шүүлтүүр арилгах</button>
+        </div>
+      </div>
+
+      <!-- Ачаалж байх skeleton — app.js showFeedSkeleton/hideFeedSkeleton удирдана -->
+      <div class="feed-skeleton" id="feedSkeleton" hidden aria-hidden="true">
+        <div class="post-skeleton">
+          <span class="skel skel-photo"></span>
+          <div class="post-skeleton-body">
+            <span class="skel skel-badge"></span>
+            <span class="skel skel-line"></span>
+            <span class="skel skel-line skel-line-short"></span>
+          </div>
+        </div>
+        <div class="post-skeleton">
+          <span class="skel skel-photo"></span>
+          <div class="post-skeleton-body">
+            <span class="skel skel-badge"></span>
+            <span class="skel skel-line"></span>
+            <span class="skel skel-line skel-line-short"></span>
+          </div>
+        </div>
+        <div class="post-skeleton">
+          <span class="skel skel-photo"></span>
+          <div class="post-skeleton-body">
+            <span class="skel skel-badge"></span>
+            <span class="skel skel-line"></span>
+            <span class="skel skel-line skel-line-short"></span>
+          </div>
         </div>
       </div>
 
@@ -203,7 +235,7 @@
               <div class="post-badges">
                 <span class="badge badge-passenger">Хүн тээвэр</span>
               </div>
-              <span class="post-time">2 минутын өмнө</span>
+              <span class="post-time chip-sample">Жишээ зар</span>
             </div>
 
             <div class="post-route">
@@ -225,10 +257,10 @@
             <div class="post-person">
               <span class="person-avatar" aria-hidden="true">Б</span>
               <div class="person-main">
-                <p class="person-name"><a class="person-link" href="driver.html?id=bold-dorj">Болд Дорж</a> <span class="verified" title="Баталгаажсан" aria-label="Баталгаажсан"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
+                <p class="person-name"><a class="person-link" href="driver.html?id=bold-dorj">Болд Дорж</a> <span class="verified" title="Баталгаажсан (жишээ)" aria-label="Баталгаажсан (жишээ)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
                 <p class="person-meta"><span class="rating">4.8</span> <span class="star" aria-hidden="true">★</span> · 124 аялал</p>
               </div>
-              <a class="btn btn-contact" href="tel:00000001" aria-label="Холбогдох: Болд Дорж, 0000-0001 (жишээ дугаар)">Холбогдох</a>
+              <button type="button" class="btn btn-contact" aria-label="Холбогдох: Болд Дорж (жишээ зар)">Холбогдох</button>
             </div>
           </div>
         </article>
@@ -241,7 +273,7 @@
                 <span class="badge badge-passenger">Хүн тээвэр</span>
                 <span class="badge badge-request">Унаа хэрэгтэй</span>
               </div>
-              <span class="post-time">15 минутын өмнө</span>
+              <span class="post-time chip-sample">Жишээ зар</span>
             </div>
 
             <div class="post-route">
@@ -282,7 +314,7 @@
               <div class="post-badges">
                 <span class="badge badge-livestock">Мал тээвэр</span>
               </div>
-              <span class="post-time">3 цагийн өмнө</span>
+              <span class="post-time chip-sample">Жишээ зар</span>
             </div>
 
             <div class="post-route">
@@ -304,10 +336,10 @@
             <div class="post-person">
               <span class="person-avatar" aria-hidden="true">Б</span>
               <div class="person-main">
-                <p class="person-name"><a class="person-link" href="driver.html?id=bat-erdene">Бат-Эрдэнэ Энхбат</a> <span class="verified" title="Баталгаажсан" aria-label="Баталгаажсан"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
+                <p class="person-name"><a class="person-link" href="driver.html?id=bat-erdene">Бат-Эрдэнэ Энхбат</a> <span class="verified" title="Баталгаажсан (жишээ)" aria-label="Баталгаажсан (жишээ)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
                 <p class="person-meta"><span class="rating">4.9</span> <span class="star" aria-hidden="true">★</span> · 45 аялал</p>
               </div>
-              <a class="btn btn-contact" href="tel:00000002" aria-label="Холбогдох: Бат-Эрдэнэ Энхбат, 0000-0002 (жишээ дугаар)">Холбогдох</a>
+              <button type="button" class="btn btn-contact" aria-label="Холбогдох: Бат-Эрдэнэ Энхбат (жишээ зар)">Холбогдох</button>
             </div>
           </div>
         </article>
@@ -320,7 +352,7 @@
                 <span class="badge badge-moving">Гэр нүүлгэх</span>
                 <span class="badge badge-request">Унаа хэрэгтэй</span>
               </div>
-              <span class="post-time">5 цагийн өмнө</span>
+              <span class="post-time chip-sample">Жишээ зар</span>
             </div>
 
             <div class="post-route">
@@ -361,7 +393,7 @@
               <div class="post-badges">
                 <span class="badge badge-cargo">Бараа тээвэр</span>
               </div>
-              <span class="post-time">1 цагийн өмнө</span>
+              <span class="post-time chip-sample">Жишээ зар</span>
             </div>
 
             <div class="post-route">
@@ -386,10 +418,10 @@
             <div class="post-person">
               <span class="person-avatar" aria-hidden="true">Г</span>
               <div class="person-main">
-                <p class="person-name"><a class="person-link" href="driver.html?id=ganbaatar">Ганбаатар Мөнх</a> <span class="verified" title="Баталгаажсан" aria-label="Баталгаажсан"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
+                <p class="person-name"><a class="person-link" href="driver.html?id=ganbaatar">Ганбаатар Мөнх</a> <span class="verified" title="Баталгаажсан (жишээ)" aria-label="Баталгаажсан (жишээ)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
                 <p class="person-meta"><span class="rating">4.7</span> <span class="star" aria-hidden="true">★</span> · 89 аялал</p>
               </div>
-              <a class="btn btn-contact" href="tel:00000003" aria-label="Холбогдох: Ганбаатар Мөнх, 0000-0003 (жишээ дугаар)">Холбогдох</a>
+              <button type="button" class="btn btn-contact" aria-label="Холбогдох: Ганбаатар Мөнх (жишээ зар)">Холбогдох</button>
             </div>
           </div>
         </article>
@@ -402,7 +434,7 @@
                 <span class="badge badge-livestock">Мал тээвэр</span>
                 <span class="badge badge-request">Унаа хэрэгтэй</span>
               </div>
-              <span class="post-time">6 цагийн өмнө</span>
+              <span class="post-time chip-sample">Жишээ зар</span>
             </div>
 
             <div class="post-route">
@@ -443,7 +475,7 @@
               <div class="post-badges">
                 <span class="badge badge-passenger">Хүн тээвэр</span>
               </div>
-              <span class="post-time">8 цагийн өмнө</span>
+              <span class="post-time chip-sample">Жишээ зар</span>
             </div>
 
             <div class="post-route">
@@ -468,7 +500,7 @@
                 <p class="person-name"><a class="person-link" href="driver.html?id=enkhbayar">Энхбаяр Ууганбаяр</a></p>
                 <p class="person-meta"><span class="rating">4.6</span> <span class="star" aria-hidden="true">★</span> · 31 аялал</p>
               </div>
-              <a class="btn btn-contact" href="tel:00000004" aria-label="Холбогдох: Энхбаяр Ууганбаяр, 0000-0004 (жишээ дугаар)">Холбогдох</a>
+              <button type="button" class="btn btn-contact" aria-label="Холбогдох: Энхбаяр Ууганбаяр (жишээ зар)">Холбогдох</button>
             </div>
           </div>
         </article>
@@ -483,7 +515,7 @@
               <div class="post-badges">
                 <span class="badge badge-cargo">Бараа тээвэр</span>
               </div>
-              <span class="post-time">12 цагийн өмнө</span>
+              <span class="post-time chip-sample">Жишээ зар</span>
             </div>
 
             <div class="post-route">
@@ -511,7 +543,7 @@
                 <p class="person-name"><a class="person-link" href="driver.html?id=erdenebat">Эрдэнэбат Сайнбаяр</a></p>
                 <p class="person-meta"><span class="chip-new">Шинэ гишүүн</span></p>
               </div>
-              <a class="btn btn-contact" href="tel:00000005" aria-label="Холбогдох: Эрдэнэбат Сайнбаяр, 0000-0005 (жишээ дугаар)">Холбогдох</a>
+              <button type="button" class="btn btn-contact" aria-label="Холбогдох: Эрдэнэбат Сайнбаяр (жишээ зар)">Холбогдох</button>
             </div>
           </div>
         </article>
