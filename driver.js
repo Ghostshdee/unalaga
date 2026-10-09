@@ -121,6 +121,7 @@ function renderPosts(d) {
       id: d.id + '-' + p.to,
       role: 'driver',
       sample: true,
+      author: d.name,   /* «Холбогдох: Болд Дорж (жишээ зар)» aria-label-д */
       createdAt: Date.now() - p.ago * 60000,
       vehicle: { veh: d.veh, name: p.vehicleName || d.car },
       hidePerson: true

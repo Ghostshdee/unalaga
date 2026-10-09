@@ -433,10 +433,12 @@ function initModal() {
     }
     if (saved === 'no-photo') post.photo = '';
     clearFilters();   /* шүүлтүүр идэвхтэй байсан ч шинэ зар заавал харагдана */
-    prependPost(post);
+    const card = prependPost(post);
 
     closeModal();
     resetForm(form);
+    /* Мобайлд hero-гийн доор үлдэхгүй — хүн шинэ тасалбараа хэвлэгдэж байхад нь харна */
+    if (card) card.scrollIntoView({ block: 'start', behavior: reduceMotion() ? 'auto' : 'smooth' });
     /* Сервер байхгүй — зар зөвхөн энэ төхөөрөмжид хадгалагдана, жолооч нарт хүрэхгүй */
     showToast(saved === 'ok'
       ? 'Захиалга энэ төхөөрөмжид хадгалагдлаа (туршилт)'
@@ -539,9 +541,6 @@ async function readForm(form) {
 
 const PROFILE_KEY = 'unalaga_profile';
 const SAVED_KEY = 'unalaga_saved_drivers';
-
-/* Машины төрөл → карт дээрх дүрс (style.css .veh-*) */
-const VEH_BY_TYPE = { sedan: 'veh-sedan', van: 'veh-van', pickup: 'veh-pickup', truck: 'veh-pickup' };
 
 /* localStorage хаалттай (incognito, хөтчийн тохиргоо) үед getItem алдаа шидэнэ.
    Үүнийг эвдэрсэн JSON-оос ялгаж, «зар алга» гэж худал хэлэхгүйн тулд тэмдэглэнэ.
@@ -696,13 +695,57 @@ function savePost(post) {
   }
 }
 
-/* «4-р сарын 27, Даваа · 08:00» — жишээ картуудтай ижил хэлбэр */
-function formatWhen(date, time) {
-  const parts = String(date).split('-').map(Number);
-  if (parts.length !== 3) return '';
-  const d = new Date(parts[0], parts[1] - 1, parts[2]);
-  const text = parts[1] + '-р сарын ' + parts[2] + ', ' + WEEKDAYS[d.getDay()];
-  return time ? text + ' · ' + time : text;
+/* Явах өдөр — «Өнөөдөр», «Маргааш», бусад нь «10-р сарын 14, Мягмар» (тасалбарын дээд мөр) */
+function whenParts(date, time) {
+  const parts = String(date || '').split('-').map(Number);
+  let day = '';
+  if (parts.length === 3 && parts.every(n => n > 0)) {
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.round((d - today) / 86400000);
+    day = diff === 0 ? 'Өнөөдөр' : diff === 1 ? 'Маргааш'
+      : parts[1] + '-р сарын ' + parts[2] + ', ' + WEEKDAYS[d.getDay()];
+  }
+  return { time: time || '', day: day };
+}
+
+/* <p class="post-when"><b class="when-time">18:00</b> <span class="when-day">Өнөөдөр</span></p> */
+function whenNode(date, time) {
+  const w = whenParts(date, time);
+  const p = el('p', 'post-when');
+  p.appendChild(el('b', w.time ? 'when-time' : 'when-time is-open', w.time || 'Цаг тохирно'));
+  p.appendChild(document.createTextNode(' '));
+  p.appendChild(el('span', 'when-day', w.day));
+  return p;
+}
+
+/* Жишээ зарын огноо — өнөөдрөөс day хоногийн дараа. Өнөөдрийн цаг өнгөрсөн бол
+   маргааш — орой «Өнөөдөр 18:00» гэж хуучирсан харагдахгүй. Жишээ гэдэг нь «Жишээ зар» чипээр ил. */
+function sampleDate(day, time) {
+  const d = new Date();
+  let add = Number(day) || 0;
+  if (add === 0 && time) {
+    const hm = time.split(':').map(Number);
+    if (d.getHours() * 60 + d.getMinutes() > hm[0] * 60 + hm[1]) add = 1;
+  }
+  d.setDate(d.getDate() + add);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+/* index.html-ийн 8 жишээ карт — data-day/data-time-аар өдрийг бөглөнө */
+function initSampleDates() {
+  for (const card of document.querySelectorAll('.post-card[data-day]')) {
+    const time = card.dataset.time || '';
+    const day = card.querySelector('.when-day');
+    if (day) day.textContent = whenParts(sampleDate(card.dataset.day, time), time).day;
+  }
+}
+document.addEventListener('DOMContentLoaded', initSampleDates);
+
+function reduceMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
 
 /* «Дөнгөж сая», «5 минутын өмнө», «3 цагийн өмнө», «2 өдрийн өмнө» */
@@ -736,98 +779,105 @@ const KIND_BADGE = {
   moving: ['badge-moving', 'Гэр нүүлгэх']
 };
 
-/* Пост объектоос картын DOM үүсгэнэ. innerHTML биш textContent —
-   хэрэглэгчийн бичсэн тэмдэглэлд HTML орсон ч код болж ажиллахгүй.
-   Хэрэглэгчийн өөрийн зараас гадна жолоочийн хуудасны зарыг ч зурна:
-   post.vehicle (машины панел), post.gap (зай/хугацаа), post.capacityText,
-   post.hidePerson (жолоочийн өөрийн хуудсанд нэрийг давтахгүй). */
+/* Машины жижиг дүрс — тогтмол SVG (хэрэглэгчийн өгөгдөл биш) */
+const CAR_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 16.5h15M6.5 16.5l1.4-4.6A2 2 0 0 1 9.8 10.5h4.4a2 2 0 0 1 1.9 1.4l1.4 4.6M4.5 16.5v2.5M19.5 16.5v2.5"/><circle cx="8.5" cy="16.5" r="1.3"/><circle cx="15.5" cy="16.5" r="1.3"/></svg>';
+
+/* Пост объектоос ТАСАЛБАР хэлбэрийн картын DOM үүсгэнэ (DESIGN §1, хаан 2026-10-09):
+   зүүн — цаг, чиглэл, суудал, хэн; баруун stub — үнэ, Холбогдох.
+   Хэрэглэгчийн текстийг innerHTML биш textContent-оор — HTML орсон ч код болж ажиллахгүй.
+   Жолоочийн хуудасны зарыг ч зурна: post.vehicle (машины нэр), post.gap (зай/хугацаа),
+   post.capacityText, post.day (жишээ — өнөөдрөөс хэд хоног), post.hidePerson (нэрийг давтахгүй). */
 function createPost(post) {
   const isDriver = post.role === 'driver';
   const card = el('article', post.hidePerson ? 'post-card' : 'post-card is-mine');
   card.dataset.postId = post.id;
 
-  /* Машины зураг — жолооч зураг оруулсан үед л (BUILD §2) */
-  /* Профайлын машинтай, зураггүй зар → брэндийн панел + машины нэр */
-  const vehicle = post.vehicle ||
-    (isDriver && !post.photo && post.car && post.car.name
-      ? { veh: VEH_BY_TYPE[post.car.type] || 'veh-sedan', name: post.car.name }
-      : null);
-  if (isDriver && vehicle) {
-    /* Жишээ жолоочийн брэндийн панел + машины нэр (нүүр хуудастай ижил) */
-    const panel = el('div', 'post-photo ' + vehicle.veh);
-    panel.appendChild(el('span', 'post-photo-name', vehicle.name));
-    card.appendChild(panel);
-  } else if (isDriver && post.photo) {
-    const photo = el('div', 'post-photo veh-sedan');
+  /* Жолоочийн БОДИТ зураг байвал л дээд тууз — хоосон панел зурахгүй */
+  if (isDriver && post.photo) {
+    card.classList.add('has-photo');
+    const photo = el('div', 'post-photo');
     const img = el('img');
     img.src = post.photo;
     img.alt = 'Жолоочийн машины зураг';
     img.width = 600;
-    img.height = 338;
+    img.height = 140;
     img.onerror = () => photo.classList.add('no-image');
     photo.appendChild(img);
-    if (post.car && post.car.name) photo.appendChild(el('span', 'post-photo-name', post.car.name));
     card.appendChild(photo);
   }
 
   const body = el('div', 'post-body');
 
-  /* Badge + хугацаа */
+  /* Дээд мөр — явах цаг том + өдөр, баруун талд badge */
   const head = el('div', 'post-head');
+  head.appendChild(whenNode(post.day != null ? sampleDate(post.day, post.time) : post.date, post.time));
   const badges = el('div', 'post-badges');
   const kind = KIND_BADGE[post.kind] || KIND_BADGE.passenger;
   badges.appendChild(el('span', 'badge ' + kind[0], kind[1]));
   if (!isDriver) badges.appendChild(el('span', 'badge badge-request', 'Унаа хэрэгтэй'));
+  /* Жишээ зар — хуурамч «N минутын өмнө» биш, нүдэнд тод дээд мөрөнд (kharuul 2026-10-09).
+     data-ts өгөхгүй тул 60 секундын шинэчлэл хөндөхгүй */
+  if (post.sample) badges.appendChild(el('span', 'post-time chip-sample', 'Жишээ зар'));
   head.appendChild(badges);
-  if (post.sample) {
-    /* Жишээ зар — хуурамч «N минутын өмнө» биш. data-ts өгөхгүй тул 60 секундын шинэчлэл хөндөхгүй */
-    head.appendChild(el('span', 'post-time chip-sample', 'Жишээ зар'));
-  } else {
-    const time = el('span', 'post-time', formatAgo(post.createdAt));
-    time.dataset.ts = post.createdAt;
-    head.appendChild(time);
-  }
   body.appendChild(head);
 
-  /* Чиглэл — картын хамгийн том элемент (DESIGN §1). Зай тооцоолох
-     өгөгдөл одоохондоо байхгүй тул route-gap-гүй. */
+  /* Чиглэл — ХААНААС ——●—— ХААШАА, картын хамгийн тод элемент */
   const route = el('div', 'post-route');
-  const rail = el('span', 'route-rail');
-  rail.setAttribute('aria-hidden', 'true');
-  rail.appendChild(el('i', 'route-dot route-dot-start'));
-  rail.appendChild(el('i', 'route-dot route-dot-end'));
-  const cities = el('div', post.gap ? 'route-cities' : 'route-cities route-cities-tight');
-  cities.appendChild(el('p', 'route-city route-from', post.from));
-  if (post.gap) cities.appendChild(el('p', 'route-gap', post.gap));
-  cities.appendChild(el('p', 'route-city route-to', post.to));
-  route.appendChild(rail);
-  route.appendChild(cities);
+  route.appendChild(el('p', 'route-city route-from', post.from));
+  const line = el('span', 'route-line');
+  line.setAttribute('aria-hidden', 'true');
+  line.appendChild(el('i', 'route-dot'));
+  route.appendChild(line);
+  route.appendChild(el('p', 'route-city route-to', post.to));
   body.appendChild(route);
+  if (post.gap) body.appendChild(el('p', 'route-gap', post.gap));
 
-  body.appendChild(el('p', 'post-when', formatWhen(post.date, post.time)));
-
+  /* Суудал / багтаамж — жолоочийн хүн тээвэрт сул суудал бүрд дөрвөлжин */
   const facts = el('div', 'post-facts');
-  facts.appendChild(el('span', 'post-capacity',
-    post.capacityText || kindCapacity(post) || (isDriver ? post.seats + ' суудал үлдсэн' : post.seats + ' хүн')));
-  if (isDriver && post.priceLines) {
-    /* Хоёр хэсэгтэй үнэ — «Хүн 25 000 ₮ / Бараа 30 000 ₮» */
-    const split = el('span', 'post-price post-price-split');
-    for (const line of post.priceLines) split.appendChild(el('span', null, line));
-    facts.appendChild(split);
-  } else if (isDriver && post.price > 0) {
-    facts.appendChild(el('span', 'post-price', formatPrice(post.price)));
+  const capText = post.capacityText || kindCapacity(post);
+  if (capText) {
+    facts.appendChild(el('span', 'post-capacity', capText));
+  } else if (isDriver) {
+    const n = Number(post.seats) || 0;
+    const seats = el('span', 'post-seats');
+    seats.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < Math.min(n, 8); i++) seats.appendChild(el('i'));
+    facts.appendChild(seats);
+    facts.appendChild(el('span', 'post-capacity', n + ' сул суудал'));
+  } else {
+    facts.appendChild(el('span', 'post-capacity', post.seats + ' хүн'));
   }
   body.appendChild(facts);
 
-  if (post.note) body.appendChild(el('p', 'post-note', post.note));
-
-  if (post.hidePerson) {
-    card.appendChild(body);
-    return card;
+  /* Машины нэр — зураггүй ч нэг мөр болж үлдэнэ */
+  const carName = (post.vehicle && post.vehicle.name) || (post.car && post.car.name);
+  if (isDriver && carName) {
+    const car = el('p', 'post-car');
+    car.innerHTML = CAR_ICON;
+    car.appendChild(document.createTextNode(' ' + carName));
+    body.appendChild(car);
   }
 
-  /* Хэн — профайлд нэрээ бичсэн бол тэр нэр, үгүй бол «Таны зар».
-     Шинэ жолооч «0 үнэлгээ» биш «Шинэ гишүүн» (DESIGN §6). */
+  if (post.note) body.appendChild(el('p', 'post-note', post.note));
+
+  /* Доод мөр — хэн + «5 минутын өмнө» (өөрийн зар) */
+  const foot = el('div', 'post-foot');
+  if (!post.hidePerson) foot.appendChild(personNode(post, isDriver));
+  if (!post.sample) {
+    const time = el('span', 'post-time', formatAgo(post.createdAt));
+    time.dataset.ts = post.createdAt;
+    foot.appendChild(time);
+  }
+  if (foot.childNodes.length) body.appendChild(foot);
+  card.appendChild(body);
+
+  card.appendChild(stubNode(post, isDriver));
+  return card;
+}
+
+/* Хэн — профайлд нэрээ бичсэн бол тэр нэр, үгүй бол «Таны зар».
+   Шинэ жолооч «0 үнэлгээ» биш «Шинэ гишүүн» (DESIGN §6). */
+function personNode(post, isDriver) {
   const person = el('div', 'post-person');
   const headerAvatar = document.querySelector('.header .avatar');
   const initial = post.author ? post.author.charAt(0).toUpperCase()
@@ -842,17 +892,53 @@ function createPost(post) {
   main.appendChild(meta);
   person.appendChild(avatar);
   person.appendChild(main);
-  body.appendChild(person);
+  return person;
+}
 
-  card.appendChild(body);
-  return card;
+/* Тасалбарын stub — үнэ (эсвэл «Үнэ тохирно») ба «Холбогдох».
+   «Холбогдох» нь жишээ зарт л: өөрийн зартайгаа холбогдох утгагүй. Дарахад app.js-ийн .btn-contact click. */
+function stubNode(post, isDriver) {
+  const stub = el('div', 'post-stub');
+  if (isDriver && post.priceLines) {
+    /* «Хүн 25 000 ₮» → шошго + дүн, хоёр мөр (stub-д нэг мөрөнд багтахгүй) */
+    const split = el('span', 'post-price post-price-split');
+    for (const text of post.priceLines) {
+      const cut = text.indexOf(' ');
+      const row = el('span', 'price-line');
+      row.appendChild(el('span', 'price-label', text.slice(0, cut)));
+      row.appendChild(el('span', 'price-amount', text.slice(cut + 1)));
+      split.appendChild(row);
+    }
+    stub.appendChild(split);
+  } else if (isDriver && post.price > 0) {
+    stub.appendChild(el('span', 'post-price', formatPrice(post.price)));
+    if ((post.kind || 'passenger') === 'passenger') stub.appendChild(el('span', 'stub-unit', 'нэг хүн'));
+  } else {
+    stub.appendChild(el('span', 'stub-unit', 'Үнэ тохирно'));
+  }
+  if (post.sample) {
+    const btn = el('button', 'btn btn-contact', 'Холбогдох');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Холбогдох: ' + (post.author || 'жолооч') + ' (жишээ зар)');
+    stub.appendChild(btn);
+  }
+  return stub;
 }
 
 /* Шинэ картыг жагсаалтын хамгийн дээр нэмнэ */
 function prependPost(post) {
   const list = document.querySelector('.post-list:not(.profile-posts)');
-  if (!list) return;
-  list.insertBefore(createPost(post), list.firstElementChild);
+  if (!list) return null;
+  const card = createPost(post);
+  list.insertBefore(card, list.firstElementChild);
+  /* «Тасалбар хэвлэгдэх» — зөвхөн нийтлэх үйлдлийн хариу (DESIGN §10), засахад биш */
+  if (!reduceMotion()) {
+    card.classList.add('is-printing');
+    const done = () => card.classList.remove('is-printing');
+    card.addEventListener('animationend', e => { if (e.animationName === 'ticket-tear') done(); });
+    setTimeout(done, 1200);
+  }
+  return card;
 }
 
 /* Ачаалж байх skeleton — жагсаалтыг aria-busy болгож, картын хэлбэртэй блок харуулна */

@@ -19,8 +19,8 @@ const DRIVERS = [
     car: 'Toyota Prius 2019', type: 'sedan', veh: 'veh-sedan', seats: 4, livestockBox: false, plate: 'УБА',
     home: 'Улаанбаатар', routes: ['Хөвсгөл', 'Булган', 'Орхон'],
     phone: '0000-0001', since: 2021, reply: '1 цагийн дотор',
-    posts: [{ kind: 'passenger', from: 'Улаанбаатар', to: 'Хөвсгөл', gap: '≈ 670 км · 10 цаг',
-      date: '2026-04-27', time: '08:00', seats: 3, price: 45000, ago: 2 }],
+    posts: [{ kind: 'passenger', from: 'Улаанбаатар', to: 'Хөвсгөл', gap: '≈ 670 км, 10 цаг',
+      day: 1, time: '08:00', seats: 3, price: 45000, ago: 2 }],
     reviews: [
       { name: 'Оюунчимэг', stars: 5, when: '2026 оны 8-р сар', text: 'Цагтаа хөдөлсөн, замдаа 2 удаа амрав. Машин цэвэрхэн.' },
       { name: 'Ганхуяг', stars: 5, when: '2026 оны 7-р сар', text: 'Ачааг гэрийн үүдэнд хүргэж өгсөн. Дахин явна.' },
@@ -32,9 +32,9 @@ const DRIVERS = [
     car: 'Hyundai Porter 2018', type: 'pickup', veh: 'veh-pickup', seats: 2, livestockBox: true, plate: 'АРА',
     home: 'Улаанбаатар', routes: ['Архангай', 'Өвөрхангай'],
     phone: '0000-0002', since: 2023, reply: '3 цагийн дотор',
-    posts: [{ kind: 'livestock', from: 'Улаанбаатар', to: 'Архангай', gap: '≈ 455 км · 7 цаг',
-      date: '2026-04-28', time: '06:00', capacityText: '5 хонь, 2 ямаа эсвэл 1 үхэр', price: 80000,
-      vehicleName: 'Hyundai Porter 2018 · малын хайрцагтай', ago: 180 }],
+    posts: [{ kind: 'livestock', from: 'Улаанбаатар', to: 'Архангай', gap: '≈ 455 км, 7 цаг',
+      day: 2, time: '06:00', capacityText: '5 хонь, 2 ямаа эсвэл 1 үхэр', price: 80000,
+      vehicleName: 'Hyundai Porter 2018, малын хайрцагтай', ago: 180 }],
     reviews: [
       { name: 'Цогтбаатар', stars: 5, when: '2026 оны 8-р сар', text: 'Хонинуудыг зөөлөн ачиж буулгасан. Хайрцаг нь бат бөх.' },
       { name: 'Энхтуяа', stars: 5, when: '2026 оны 5-р сар', text: 'Үнээ сайн хүргэсэн, замдаа ус өгсөн.' }
@@ -45,8 +45,8 @@ const DRIVERS = [
     car: 'Mitsubishi Delica 2020', type: 'van', veh: 'veh-van', seats: 7, livestockBox: false, plate: 'УНА',
     home: 'Улаанбаатар', routes: ['Дархан-Уул', 'Сэлэнгэ'],
     phone: '0000-0003', since: 2022, reply: '1 цагийн дотор',
-    posts: [{ kind: 'cargo', from: 'Улаанбаатар', to: 'Дархан', gap: '≈ 220 км · 3 цаг',
-      date: '2026-04-27', time: '06:30', capacityText: '500 кг ачаа, 5 суудал үлдсэн',
+    posts: [{ kind: 'cargo', from: 'Улаанбаатар', to: 'Дархан', gap: '≈ 220 км, 3 цаг',
+      day: 0, time: '18:00', capacityText: '500 кг ачаа, 5 суудал үлдсэн',
       priceLines: ['Хүн 25 000 ₮', 'Бараа 30 000 ₮'], ago: 60 }],
     reviews: [
       { name: 'Мөнхзул', stars: 5, when: '2026 оны 8-р сар', text: 'Дэлгүүрийн бараагаа бүгдийг нь бүтэн хүргэсэн.' },
@@ -58,8 +58,8 @@ const DRIVERS = [
     car: 'Hyundai Starex 2017', type: 'van', veh: 'veh-van', seats: 11, livestockBox: false, plate: 'БӨА',
     home: 'Улаанбаатар', routes: ['Баян-Өлгий', 'Ховд', 'Увс'],
     phone: '0000-0004', since: 2024, reply: 'Өдөртөө',
-    posts: [{ kind: 'passenger', from: 'Улаанбаатар', to: 'Баян-Өлгий', gap: '≈ 1640 км · 26 цаг',
-      date: '2026-04-30', time: '07:00', seats: 6, price: 120000, ago: 480 }],
+    posts: [{ kind: 'passenger', from: 'Улаанбаатар', to: 'Баян-Өлгий', gap: '≈ 1640 км, 26 цаг',
+      day: 3, time: '07:00', seats: 6, price: 120000, ago: 480 }],
     reviews: [
       { name: 'Айдос', stars: 5, when: '2026 оны 8-р сар', text: 'Урт замд тайван, найдвартай явсан.' },
       { name: 'Сэрээтэр', stars: 4, when: '2026 оны 6-р сар', text: 'Сайн. Хөдлөх цагаа урьдчилж мэдэгдвэл илүү дээр.' }
@@ -70,8 +70,8 @@ const DRIVERS = [
     car: 'Kia Bongo 2019', type: 'pickup', veh: 'veh-pickup', seats: 2, livestockBox: false, plate: 'ӨВА',
     home: 'Улаанбаатар', routes: ['Өвөрхангай'],
     phone: '0000-0005', since: 2026, reply: 'Өдөртөө',
-    posts: [{ kind: 'cargo', from: 'Улаанбаатар', to: 'Өвөрхангай', gap: '≈ 430 км · 6 цаг',
-      date: '2026-04-29', time: '07:00', capacityText: '1 тонн бараа, 2 суудал хоосон',
+    posts: [{ kind: 'cargo', from: 'Улаанбаатар', to: 'Өвөрхангай', gap: '≈ 430 км, 6 цаг',
+      day: 2, time: '07:00', capacityText: '1 тонн бараа, 2 суудал хоосон',
       priceLines: ['Бараа 60 000 ₮', 'Хүн 35 000 ₮'], ago: 720 }],
     reviews: []
   },
