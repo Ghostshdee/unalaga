@@ -4,17 +4,29 @@
    Дизайны шийдвэр: DESIGN.md §2 (өнгө), §3 (фонт), §4 (зай), §5 (badge)
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Өдөр / шөнийн горим (DESIGN §2) ──────────────────────────
+   :root = өдөр. :root[data-theme="night"] доор token-уудыг дарна.
+   data-theme-ийг <head> дахь inline script CSS-ээс өмнө тавина (анивчилтгүй). */
 :root {
+  color-scheme: light;
+
   /* ── Суурь өнгө ─────────────────────────────────────────── */
   --ink:        #0B2545;  /* гүн хөх — гарчиг, гол текст */
   --ink-muted:  #5A6B7F;  /* дэд текст */
   --ink-lift:   #123A6B;  /* машины панелийн гэрэлтсэн тал */
   --ink-glow:   #1C4B86;  /* машины панелийн радиаль гэрэл */
   --scrim:      rgba(6, 21, 42, 0.74);  /* зураг/панел дээрх бараан хөшиг */
-  --paper:      #F2F4F7;  /* хуудасны дэвсгэр */
+  --paper:      #F7F4EE;  /* хуудасны дэвсгэр — бүлээн цайвар */
   --surface:    #FFFFFF;  /* карт */
-  --line:       #DCE2E9;  /* хүрээ, тусгаарлагч */
-  --line-2:     #C2CDDA;  /* тод хүрээ — чиглэлийн шугам, hover */
+  --line:       #E8E1D5;  /* хүрээ, тусгаарлагч */
+  --line-2:     #D6CBB8;  /* тод хүрээ — чиглэлийн шугам, hover */
+
+  /* --ink нь текст ба бараан дэвсгэр хоёр үүрэгтэй байсан. Шөнөд --ink цайвар
+     болдог тул бараан дэвсгэрт (header, toast, offline-bar) тусдаа token. */
+  --chrome:     #0B2545;  /* header, бараан мэдэгдлийн дэвсгэр */
+  --link:       #1B4F8C;  /* хөх ТЕКСТ, холбоос (товчийн дэвсгэр биш — тэр --blue) */
+  --on-gold:    #FFFFFF;  /* алтан дугуй дээрх ✓ */
+  --glow:       0 0 0 0 transparent;  /* шөнө л алтан туяа (DESIGN §10) */
 
   /* ── Далбааны өнгө ──────────────────────────────────────── */
   --blue:       #1B4F8C;  /* үндсэн товч, холбоос, идэвхтэй цэс */
@@ -25,7 +37,7 @@
   --red-wash:   #FBEAEB;
 
   --gold:       #C68B14;  /* итгэл: од, ✓ баталгаа, чиглэлийн төгсгөл */
-  --gold-wash:  #FBF2DE;
+  --gold-wash:  #FFF4DE;
 
   /* ── Далбааны өнгө — ЗӨВХӨН hero-д (DESIGN §2, §14) ──────────
      Feed дэх өнгөний утга (улаан = хэрэгцээ, алт = итгэл) хэвээр.
@@ -36,9 +48,21 @@
   --flag-gold:  #F5C518;  /* нар, замын зураас, hero-гийн товч */
   --flag-gold-hi: #FFD942;/* тэр товчны hover */
   --flag-red:   #C4272F;  /* hero-гийн хажуугийн зурвас */
-  --on-dark-soft: rgba(255, 255, 255, 0.82);   /* бараан дээрх дэд текст */
+  --on-dark-soft: rgba(255, 255, 255, 0.92);   /* бараан дээрх дэд текст */
   --hero-veil-top: rgba(6, 23, 49, 0.10);
   --hero-veil-bot: rgba(5, 15, 34, 0.72);
+
+  /* Hero-гийн өдөр/шөнийн давхаргууд. Өдөр: нар мандах тэнгэр (баруун доор
+     туяа, зүүн тал гүн хөх — цагаан текст ≥4.5:1). Шөнө: одоогийн шөнийн тэнгэр + сар. */
+  --hero-sky:
+    radial-gradient(ellipse 42% 60% at 88% 56%, #F6CB86 0%, rgba(241, 168, 94, 0.75) 38%, rgba(241, 168, 94, 0) 100%),
+    linear-gradient(100deg, #174f96 0%, #2b6fc0 52%, #2f74c4 100%);
+  --hero-scrim: radial-gradient(ellipse 85% 75% at 0% 100%, rgba(8, 26, 60, 0.6), transparent);
+  --sun-art: radial-gradient(circle 170px at 86% 56%, #FFF6D8 0 14px, rgba(255, 226, 140, 0.9) 22px, rgba(255, 196, 96, 0.38) 70px, rgba(255, 190, 90, 0) 170px);
+  --hill-far:   #2a5f9f;
+  --hill-mid:   #1b4880;
+  --hill-near:  #0e2d58;
+  --road-fill:  #10335e;
 
   --white:      #FFFFFF;  /* өнгөт дэвсгэр дээрх текст */
 
@@ -87,7 +111,7 @@
 
   /* ── Modal / форм ───────────────────────────────────────── */
   --overlay:    rgba(11, 37, 69, 0.52);  /* modal-ын ард бүдгэрүүлэх */
-  --ink-faint:  #93A2B3;                 /* placeholder текст */
+  --ink-faint:  #66768A;                 /* placeholder текст — цагаан дээр ~4.7:1 */
   /* select-ийн доош сум — data-URI, нэмэлт хүсэлтгүй */
   --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%235A6B7F' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
@@ -95,6 +119,54 @@
 
   --header-height: 60px;
   --shell: 1160px;
+}
+
+/* ═══════════════ ШӨНИЙН ГОРИМ (DESIGN §2) ═══════════════
+   Зөвхөн token дарна — бүрэлдэхүүн бүр өөрийн дүрмээ хэвээр хадгална.
+   Бараан дэвсгэр дээрх текстийн өнгө (--white) хоёр горимд ижил. */
+:root[data-theme="night"] {
+  color-scheme: dark;
+
+  --paper:      #081428;
+  --surface:    #0F2240;
+  --ink:        #EAF1FB;
+  --ink-muted:  #93A6C2;
+  --line:       #1E3354;
+  --line-2:     #2C4670;
+
+  --blue:       #2D6FD0;
+  --blue-dark:  #2559A8;
+  --blue-wash:  #16305A;
+  --red:        #FF8A8F;
+  --red-wash:   rgba(255, 90, 100, 0.14);
+  --gold:       #FFD24D;
+  --gold-wash:  rgba(255, 210, 77, 0.10);
+
+  --chrome:     #0A1B35;
+  --link:       #7FB2F0;  /* #0F2240 дээр ~7:1 */
+  --on-gold:    #081428;
+  --glow:       0 0 14px rgba(255, 200, 60, 0.5);
+
+  --badge-livestock: #D9B16A;
+  --badge-cargo:     #7FCB8F;
+  --badge-moving:    #E5A07F;
+
+  --ink-faint:  #8196B4;  /* #0F2240 дээр ~5.3:1 */
+  --overlay:    rgba(2, 8, 20, 0.66);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3),
+            0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 4px 10px rgba(0, 0, 0, 0.4),
+                 0 24px 60px rgba(0, 0, 0, 0.55);
+  --caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%2393A6C2' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Hero: шөнийн тэнгэр, сар */
+  --hero-sky: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 54%, var(--sky-low) 100%);
+  --hero-scrim: linear-gradient(180deg, var(--hero-veil-top) 0%, transparent 32%, var(--hero-veil-bot) 100%);
+  --sun-art: radial-gradient(circle 150px at 74% 34%, #F4EBCB 0 12px, rgba(244, 235, 203, 0.28) 13px, rgba(244, 235, 203, 0.1) 50px, rgba(244, 235, 203, 0) 150px);
+  --hill-far:   #12376E;
+  --hill-mid:   #0B2549;
+  --hill-near:  #050F22;
+  --road-fill:  #071B36;
 }
 
 /* ═══════════════ RESET ═══════════════ */
@@ -115,7 +187,7 @@ img { max-width: 100%; display: block; }
 
 button { font: inherit; color: inherit; cursor: pointer; }
 
-a { color: var(--blue); text-decoration: none; }
+a { color: var(--link); text-decoration: none; }
 
 /* Гарчигт мөрийн өндөр 1.2, бага зэрэг нягт tracking */
 h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
@@ -148,7 +220,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 
 /* ═══════════════ ФОКУС (a11y — DESIGN §11) ═══════════════ */
 :focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--link);
   outline-offset: 2px;
   border-radius: 3px;
 }
@@ -201,7 +273,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   align-items: center;
   gap: var(--space-5);
   height: var(--header-height);
-  background: var(--ink);
+  background: var(--chrome);
   border-top: 3px solid var(--gold);
   /* Дэвсгэр бүтэн өргөнөөр, агуулга нь shell-д төвлөрнө */
   padding-inline: max(var(--space-5), calc((100% - var(--shell)) / 2));
@@ -258,7 +330,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   padding: 0 var(--space-4) 0 40px;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: var(--white);
+  background: var(--surface);   /* өдөр цагаан, шөнө бараан — текст уншигдана */
   font-family: var(--font-body);
   font-size: var(--text-small);
   color: var(--ink);
@@ -287,6 +359,25 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 .icon-btn:hover { background: rgba(255, 255, 255, 0.1); }
 /* Мэдэгдлийн цонх — хонхны доор хөвнө (DESIGN §4: хөвж байгаа зүйлд л сүүдэр) */
 .header-actions { position: relative; }
+
+/* Өнгөний горимын товч — 3 icon-оос одоогийн сонголтыг л харуулна */
+.theme-btn[hidden] { display: none; }   /* .icon-btn-ийн display:grid hidden-ийг дардаг */
+.theme-btn .ic { display: none; }
+:root[data-theme-pref="auto"] .theme-btn .ic-auto,
+:root[data-theme-pref="day"] .theme-btn .ic-sun,
+:root[data-theme-pref="night"] .theme-btn .ic-moon { display: block; }
+@media (max-width: 360px) {
+  .header-actions { gap: var(--space-1); }
+}
+
+/* Горим солих үед л 0.25s шилжилт (ачаалахад биш). @media бүрхүүл заавал —
+   эс бөгөөс reduced-motion-ийн «transition: none»-оос давна (DESIGN §10) */
+@media (prefers-reduced-motion: no-preference) {
+  :root.theme-switching *:not(.toast) {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease,
+                fill 0.25s ease, stroke 0.25s ease, box-shadow 0.25s ease !important;
+  }
+}
 .notif-panel {
   position: absolute;
   top: calc(100% + var(--space-2));
@@ -356,10 +447,10 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 .nav-link:hover .ic { color: var(--ink); }
 .nav-link.is-active {
   background: var(--blue-wash);
-  color: var(--blue);
+  color: var(--link);
   font-weight: 600;
 }
-.nav-link.is-active .ic { color: var(--blue); }
+.nav-link.is-active .ic { color: var(--link); }
 .nav-link.is-active::before {   /* зүүн талын идэвхтэй зураас */
   content: "";
   position: absolute;
@@ -422,14 +513,22 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   inset: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 54%, var(--sky-low) 100%);
+  background: var(--hero-sky);   /* өдөр нар мандах тэнгэр, шөнө одтой хөх */
 }
-/* Доошоо бараавтар — цагаан текст уншигдана */
+/* Нар (өдөр) / сар (шөнө) — SVG биш CSS: viewBox slice-аар тайрагдахгүй, хувиар байрлана */
+.hl--sun { background: var(--sun-art); }
+/* Уул, замын өнгийг горимоор солино — SVG-ийн fill атрибутыг CSS давна.
+   clipPath доторх path-д хүрэхгүйн тулд зам нь `svg > path` */
+.hl--far path   { fill: var(--hill-far); }
+.hl--mid path   { fill: var(--hill-mid); }
+.hl--grass path { fill: var(--hill-near); }
+.hl--road svg > path { fill: var(--road-fill); }
+/* Текст уншигдах хөшиг — шөнө доошоо бараавтар, өдөр зүүн доод буланд */
 .hero-scene::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, var(--hero-veil-top) 0%, transparent 32%, var(--hero-veil-bot) 100%);
+  background: var(--hero-scrim);
 }
 
 /* Замын алтан зураас — app.js скроллоор --road-shift-ийг өөрчилнө */
@@ -446,14 +545,6 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   padding-left: var(--space-4);
   border-left: 3px solid var(--flag-red);
 }
-.hero-eyebrow {
-  margin-bottom: var(--space-2);
-  font-size: var(--text-tiny);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--flag-gold);
-}
 .hero-title {
   font-family: var(--font-display);
   font-weight: 700;
@@ -462,16 +553,19 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   letter-spacing: 0.01em;
   text-transform: uppercase;
   color: var(--white);
+  text-shadow: 0 1px 2px rgba(5, 15, 34, 0.5), 0 2px 16px rgba(5, 15, 34, 0.35);
 }
 .hero-sub {
   margin: var(--space-3) 0 var(--space-5);
   max-width: 26rem;
   color: var(--on-dark-soft);
+  text-shadow: 0 1px 2px rgba(5, 15, 34, 0.5), 0 2px 16px rgba(5, 15, 34, 0.35);
 }
 /* Гол үйлдэл — далбааны алт. Гүн хөх дэвсгэр дээр хамгийн тод. */
 .hero-cta {
   background: var(--flag-gold);
-  color: var(--ink);
+  color: var(--chrome);          /* --ink шөнө цайвар болдог тул */
+  box-shadow: var(--glow);
 }
 .hero-cta:hover { background: var(--flag-gold-hi); }
 
@@ -587,7 +681,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   background:
     var(--veh) center 78% / min(74%, 300px) no-repeat,
     radial-gradient(130% 96% at 14% 4%, var(--ink-glow) 0%, transparent 52%),
-    linear-gradient(116deg, var(--ink) 0%, var(--ink-lift) 100%);
+    linear-gradient(116deg, var(--chrome) 0%, var(--ink-lift) 100%);
 }
 /* Тээврийн хэрэгслийн дүрс — усан тэмдэг. Тодорхой файлгүй, data-URI. */
 .post-photo         { --veh: none; }
@@ -661,7 +755,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
-.badge-passenger { color: var(--blue); }
+.badge-passenger { color: var(--link); }
 .badge-livestock { color: var(--badge-livestock); }
 .badge-cargo     { color: var(--badge-cargo); }
 .badge-moving    { color: var(--badge-moving); }
@@ -710,7 +804,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   bottom: 6px;
   background: var(--gold);
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-wash);
+  box-shadow: 0 0 0 3px var(--gold-wash), var(--glow);
 }
 .route-city {
   font-family: var(--font-display);
@@ -793,7 +887,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   height: 44px;
   border-radius: 50%;
   background: var(--blue-wash);
-  color: var(--blue);
+  color: var(--link);
   font-weight: 600;
 }
 .person-main {
@@ -815,7 +909,8 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   height: 16px;
   border-radius: 50%;
   background: var(--gold);
-  color: var(--white);
+  color: var(--on-gold);
+  box-shadow: var(--glow);
   flex-shrink: 0;
 }
 .verified svg { width: 10px; height: 10px; }
@@ -1015,7 +1110,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   font-weight: 700;
   line-height: 1;
 }
-.trust-ok::before   { content: "✓"; background: var(--gold); color: var(--white); }
+.trust-ok::before   { content: "✓"; background: var(--gold); color: var(--on-gold); box-shadow: var(--glow); }
 .trust-no::before   { content: "–"; background: var(--paper); color: var(--ink-muted); border: 1px solid var(--line); }
 .trust-info::before { content: "•"; color: var(--ink-muted); font-size: 18px; }
 .trust-no { color: var(--ink-muted); }
@@ -1090,6 +1185,9 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 }
 .review-name { font-weight: 600; }
 .review-stars { color: var(--gold); letter-spacing: 1px; }
+/* text-shadow-д spread байдаггүй тул --glow-ийг биш, шөнийн дүрмийг тусад нь (DESIGN §10) */
+:root[data-theme="night"] .star,
+:root[data-theme="night"] .review-stars { text-shadow: 0 0 10px rgba(255, 200, 60, 0.5); }
 .review-text {
   margin-top: var(--space-2);
   line-height: 1.6;
@@ -1167,14 +1265,14 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 }
 .map-svg { display: block; width: 100%; height: auto; }
 .map-land { fill: var(--blue-wash); stroke: var(--line-2); stroke-width: 3; stroke-linejoin: round; }
-.map-route { stroke: var(--blue); stroke-opacity: 0.28; stroke-linecap: round; }
+.map-route { stroke: var(--link); stroke-opacity: 0.28; stroke-linecap: round; }
 .map-route.is-picked { stroke: var(--gold); stroke-opacity: 1; }
 .map-aimag { cursor: pointer; outline: none; }
 .map-hit { fill: transparent; }
 .map-dot { fill: var(--surface); stroke: var(--ink-muted); stroke-width: 3; }
-.map-aimag.has-routes .map-dot { fill: var(--blue); stroke: var(--surface); }
+.map-aimag.has-routes .map-dot { fill: var(--link); stroke: var(--surface); }
 .map-aimag.is-picked .map-dot { fill: var(--gold); stroke: var(--surface); }
-.map-aimag:focus-visible .map-hit { stroke: var(--blue); stroke-width: 4; }
+.map-aimag:focus-visible .map-hit { stroke: var(--link); stroke-width: 4; }
 .map-label {
   font-family: var(--font-body);
   font-size: 22px;
@@ -1250,11 +1348,11 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 .seg-item span:hover { color: var(--ink); }
 .seg-item input:checked + span {
   background: var(--blue-wash);
-  color: var(--blue);
+  color: var(--link);
   font-weight: 600;
 }
 .seg-item input:focus-visible + span {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--link);
   outline-offset: 1px;
 }
 
@@ -1326,7 +1424,9 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   transform: translate(-50%, 0);
 }
 /* Алдаа, сануулга — ногоон «амжилт» шиг харагдахгүй. Улаан биш (DESIGN §2) */
-.toast.is-notice { background: var(--ink); }
+.toast.is-notice { background: var(--chrome); }
+/* Шөнө --chrome нь --paper-тай бараг нийлдэг тул нимгэн хүрээ */
+:root[data-theme="night"] .toast.is-notice { border: 1px solid var(--line-2); }
 
 /* ═══════════════ ӨӨРИЙН МЭДЭГДЭЛ ═══════════════
    Алдааны төлөв (app.js renderErrorState) ба интернэт тасрах мэдэгдэл
@@ -1343,10 +1443,11 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-5);
-  background: var(--ink);
+  background: var(--chrome);
   color: var(--white);
   font-size: var(--text-small);
 }
+:root[data-theme="night"] .offline-bar { border-top: 1px solid var(--line-2); }
 .offline-bar[hidden] { display: none; }
 .offline-bar .btn {
   flex-shrink: 0;
@@ -1483,7 +1584,7 @@ body.is-offline .main { padding-bottom: calc(var(--space-6) + 76px); }
   transition: border-color var(--transition);
 }
 .inp:hover { border-color: var(--line-2); }
-.inp:focus { border-color: var(--blue); outline: none; }
+.inp:focus { border-color: var(--link); outline: none; }
 .inp::placeholder { color: var(--ink-faint); }
 textarea.inp { resize: vertical; line-height: 1.6; }
 select.inp { appearance: none; background: var(--surface) var(--caret) no-repeat right var(--space-3) center; padding-right: var(--space-6); }
@@ -1539,12 +1640,12 @@ select.inp { appearance: none; background: var(--surface) var(--caret) no-repeat
 
 /* Сонгогдсон — хөх хүрээ, цайвар хөх дэвсгэр */
 .pick-card input:checked + .pick-in {
-  border-color: var(--blue);
+  border-color: var(--link);
   background: var(--blue-wash);
 }
-.pick-card input:checked + .pick-in .ic { color: var(--blue); }
+.pick-card input:checked + .pick-in .ic { color: var(--link); }
 .pick-card input:focus-visible + .pick-in {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--link);
   outline-offset: 2px;
 }
 
@@ -1568,8 +1669,8 @@ select.inp { appearance: none; background: var(--surface) var(--caret) no-repeat
   cursor: pointer;
   transition: border-color var(--transition), color var(--transition);
 }
-.file-drop:hover { border-color: var(--blue); color: var(--blue); }
-.file-drop:focus-within { outline: 2px solid var(--blue); outline-offset: 2px; }
+.file-drop:hover { border-color: var(--link); color: var(--link); }
+.file-drop:focus-within { outline: 2px solid var(--link); outline-offset: 2px; }
 
 .file-preview {
   position: relative;
@@ -1760,7 +1861,7 @@ body.is-locked { overflow: hidden; }
     font-weight: 500;
   }
   .bnav-link .ic { width: 22px; height: 22px; }
-  .bnav-link.is-active { color: var(--blue); font-weight: 600; }
+  .bnav-link.is-active { color: var(--link); font-weight: 600; }
   /* Гол үйлдэл — хөх дугуй дотор «+» */
   .bnav-order .ic {
     width: 32px;

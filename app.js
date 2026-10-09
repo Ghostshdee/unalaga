@@ -1272,6 +1272,40 @@ function initNotif() {
 
 document.addEventListener('DOMContentLoaded', initNotif);
 
+/* ── Өнгөний горим: Авто → Өдөр → Шөнө (DESIGN §2) ──
+   Горимыг <head> дахь inline script (window.unalagaTheme) тавьдаг; энд зөвхөн товч. */
+function initThemeToggle() {
+  const btn = document.querySelector('[data-theme-toggle]');
+  if (!btn) return;
+  const theme = window.unalagaTheme;
+  if (!theme) { btn.hidden = true; return; }
+
+  const NEXT = { auto: 'day', day: 'night', night: 'auto' };
+  const LABEL = { auto: 'Өнгө: автомат', day: 'Өнгө: өдөр', night: 'Өнгө: шөнө' };
+  const TOAST = {
+    auto: 'Автомат — нар жаргахад шөнийн горим',
+    day: 'Өдрийн горим',
+    night: 'Шөнийн горим',
+  };
+  btn.setAttribute('aria-label', LABEL[theme.pref()]);
+
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let timer;
+  btn.addEventListener('click', () => {
+    const next = NEXT[theme.pref()];
+    /* Шилжилт зөвхөн товч дарахад — ачаалахад анивчихгүй */
+    if (!reduce) {
+      document.documentElement.classList.add('theme-switching');
+      clearTimeout(timer);
+      timer = setTimeout(() => document.documentElement.classList.remove('theme-switching'), 300);
+    }
+    theme.set(next);
+    btn.setAttribute('aria-label', LABEL[next]);
+    showToast(TOAST[next]);
+  });
+}
+document.addEventListener('DOMContentLoaded', initThemeToggle);
+
 /* loadPosts-ийн дараа — хадгалсан постууд ч шүүгдэнэ */
 document.addEventListener('DOMContentLoaded', initFilters);
 
