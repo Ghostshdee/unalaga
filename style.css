@@ -297,13 +297,28 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 
 .logo {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.42em;
   font-family: var(--font-display);
   font-weight: 700;
   /* Oswald condensed тул Unbounded-оос нарийн — хэмжээг нэмж жинг барив */
   font-size: var(--text-h1);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
+  line-height: 1;
   color: var(--white);
 }
+/* Тэмдэг (DESIGN §15) — хэмжээ нь нэрийн em-ээр тул нэртэйгээ хамт багасна.
+   Алт = currentColor; замын тасархай, гэрийн хаалга = header-ийн дэвсгэр (горим бүрд) */
+.logo-mark {
+  flex-shrink: 0;
+  width: 1.67em;
+  height: 1.67em;
+  color: var(--gold);
+}
+.logo-mark .cut-s { stroke: var(--chrome); }
+.logo-mark .cut-f { fill: var(--chrome); }
+.logo-tld { color: var(--gold); }
 
 .search {
   flex: 1;
@@ -368,12 +383,16 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 :root[data-theme-pref="auto"] .theme-btn .ic-auto,
 :root[data-theme-pref="day"] .theme-btn .ic-sun,
 :root[data-theme-pref="night"] .theme-btn .ic-moon { display: block; }
-/* Нарийн утас (≤360px) — горимын товч нэмэгдсэн тул лого + 4 товч 320px-д багтах.
-   Товч бүр 44px хэвээр (DESIGN §8), зай ба логог л багасгана. */
+/* Утас (≤640px) — тэмдэг нэмэгдсэн тул лого + 4 товч 320px-д багтах.
+   Товч бүр 44px хэвээр (DESIGN §8), товчны хоорондын зай ба логог л багасгана.
+   Лого дэлгэцийн өргөнийг дагаж 15–20px: (100vw − товч 168 − зай 36) / 7.6 (нэр + тэмдэг ≈ 7.5em). */
+@media (max-width: 640px) {
+  .header-actions { gap: 0; }
+  .logo { font-size: clamp(15px, calc((100vw - 204px) / 7.6), 20px); gap: 0.3em; }
+  .logo-mark { width: 1.5em; height: 1.5em; }
+}
 @media (max-width: 360px) {
   .header { gap: var(--space-2); padding-inline: var(--space-3); }
-  .header-actions { gap: 0; }
-  .logo { font-size: 19px; letter-spacing: 0.03em; }
 }
 
 /* Горим солих үед л 0.25s шилжилт (ачаалахад биш). @media бүрхүүл заавал —
@@ -1929,7 +1948,9 @@ body.is-locked { overflow: hidden; }
     inset: auto 0 0 0;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    /* Товчны тоо хуудсаар өөр (map нуугдсан — 4, map.html өөрөө — 5): тэгш хуваана */
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     padding-bottom: env(safe-area-inset-bottom);
     background: var(--surface);
     border-top: 1px solid var(--line);
@@ -1998,4 +2019,48 @@ body.is-locked { overflow: hidden; }
 /* Нарийн утас (360px ба доош) — тасалбарын чиглэл, үнэ багтахын тулд */
 @media (max-width: 360px) {
   :root { --text-route: 18px; --text-price: 18px; --stub-w: 88px; }
+}
+
+/* ═══════════════ САНТАЙ ХОЛБОГДСОН НЭМЭЛТ — 3H.2 ═══════════════ */
+
+/* Идэвхгүй товч: «Нийтлэх» (зөвшөөрөл өгөөгүй), «Дугаар ачаалж байна» */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary:disabled:hover { background: var(--blue); }
+.btn-contact:disabled:hover { background: var(--blue); }
+
+/* Honeypot — хүнд харагдахгүй, дэлгэц уншигчид алгасна */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.fld-note a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Нууцлалын тайлбар — privacy.html */
+.privacy-list {
+  max-width: 580px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.privacy-list dt { font-weight: 600; }
+.privacy-list a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.privacy-list dd {
+  margin: var(--space-1) 0 0;
+  line-height: 1.6;
 }

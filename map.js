@@ -3,7 +3,7 @@
    Чиглэлийн схем (Төлөвлөгөө Фаз 1.4). Бодит газрын зураг БИШ —
    22 аймгийн төвийг ойролцоо байрлалаар, жолоочийн чиглэлийг зураасаар.
    Газрын зургийн сан (Leaflet) 2G/3G-д хүнд тул Фаз 6 хүртэл хэрэглэхгүй.
-   app.js, drivers.js-ийн ДАРАА ачаална (AIMAGS, DRIVERS, readPosts, el).
+   app.js, drivers.js, db.js-ийн ДАРАА ачаална (AIMAGS, DRIVERS, dbMyAdPosts, el).
    ═══════════════════════════════════════════════════════════════════ */
 
 /* Аймгийн төвийн ойролцоо уртраг, өргөрөг (схемд хангалттай нарийвчлал) */
@@ -79,7 +79,7 @@ function collectRoutes() {
     for (const to of d.routes) add(d.home, to, d.id);
     for (const p of d.posts) add(p.from, p.to, d.id);
   }
-  for (const p of readPosts()) add(p.from, p.to, null);
+  for (const p of dbMyAdPosts()) add(p.from, p.to, null);
   return routes;
 }
 
@@ -179,14 +179,6 @@ function renderPicked(name, routes) {
     ul.appendChild(li);
   }
   box.appendChild(ul);
-
-  const drivers = new Set();
-  for (const r of mine) r.drivers.forEach((id) => drivers.add(id));
-  if (drivers.size) {
-    const a = el('a', 'btn btn-primary', name + ' руу явдаг ' + drivers.size + ' жишээ жолооч');
-    a.href = 'drivers.html?aimag=' + encodeURIComponent(name);
-    box.appendChild(a);
-  }
 }
 
 function initMap() {

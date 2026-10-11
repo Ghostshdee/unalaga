@@ -2,10 +2,11 @@
    Уналага.мн — app.js
    1. Hero-гийн parallax (DESIGN §14)
    2. Modal: openModal, closeModal, fillAimagSelects, syncRoleUI, validateForm
-   3. Пост: createPost, savePost, loadPosts, showToast (localStorage)
+   3. Пост: createPost, loadFeed (серверийн зар), submitNew/submitEdit, showToast
    4. Хайлт, шүүлтүүр: applyFilters, openSearch (мобайлд дэлгэц дүүрэн)
    5. Профайл: readProfile, readSaved, зар засах (#edit-<id>), устгах
    index.html, drivers.html хоёулаа ачаална — элемент байхгүй бол функц бүр чимээгүй буцна.
+   Сантай харьцах код → db.js (index, profile, map, privacy-д app.js-ээс ӨМНӨ ачаална).
    Гадны сан ашиглахгүй (CLAUDE.md §8).
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -102,6 +103,8 @@ const AIMAGS = [
 
 const ERR_EMPTY = 'Энэ талбарыг бөглөнө үү';
 const ERR_SAME = 'Хаанаас, хаашаа хоёр ижил байж болохгүй';
+const ERR_PHONE = '8 оронтой утасны дугаар оруулна уу';
+const ERR_DATE = 'Огноо өнгөрсөн эсвэл 60 хоногоос хол байна';
 
 /* Modal нээгдэхээс өмнө фокус хаана байсныг санаж, хаагдахад буцаана */
 let lastFocused = null;
@@ -162,6 +165,8 @@ function setFieldError(input, key, message) {
 /* Бүх талбарыг шалгана. Алдаатай бол эхний алдаатай талбар руу фокус аваачна.
    Буцаах утга: алдаагүй бол true. */
 function validateForm() {
+  const form = document.getElementById('orderForm');
+  const editing = !!form.dataset.editId;
   const from = document.getElementById('fFrom');
   const to = document.getElementById('fTo');
   const date = document.getElementById('fDate');
@@ -170,16 +175,18 @@ function validateForm() {
   const livestock = document.getElementById('fLivestock');
   const cargoKg = document.getElementById('fCargoKg');
   const cargoWhat = document.getElementById('fCargoWhat');
+  const name = document.getElementById('fName');
+  const phone = document.getElementById('fPhone');
   const kindInput = document.querySelector('input[name="kind"]:checked');
   const kind = kindInput ? kindInput.value : 'passenger';
   const roleInput = document.querySelector('input[name="role"]:checked');
   const isDriver = !roleInput || roleInput.value === 'driver';
 
   /* Өмнөх тэмдэглэгээг цэвэрлэнэ */
-  for (const el of [from, to, date, time, seats, livestock, cargoKg, cargoWhat]) {
+  for (const el of [from, to, date, time, seats, livestock, cargoKg, cargoWhat, name, phone]) {
     if (el) el.classList.remove('is-bad');
   }
-  for (const key of ['route', 'date', 'time', 'seats', 'livestock', 'cargoKg', 'cargoWhat']) {
+  for (const key of ['route', 'date', 'time', 'seats', 'livestock', 'cargoKg', 'cargoWhat', 'name', 'phone']) {
     const box = document.querySelector('[data-err-for="' + key + '"]');
     if (box) box.hidden = true;
   }
@@ -214,6 +221,24 @@ function validateForm() {
     }
   }
 
+  /* Огноо: Улаанбаатарын өнөөдрөөс 60 хоногийн дотор (сервер ижил шалгана).
+     Засаж байгаад огноог өөрчлөөгүй бол хуучин утгыг зөвшөөрнө. */
+  if (date.value && date.value !== form.dataset.origDate &&
+      ((date.min && date.value < date.min) || (date.max && date.value > date.max))) {
+    setFieldError(date, 'date', ERR_DATE);
+    if (!firstBad) firstBad = date;
+  }
+
+  /* Холбоо барих — нэр хоёр үед заавал, утас зөвхөн шинэ зарт (засахад утас өөрчлөгдөхгүй) */
+  if (!name.value.trim()) {
+    setFieldError(name, 'name', ERR_EMPTY);
+    if (!firstBad) firstBad = name;
+  }
+  if (!editing && cleanPhone(phone.value).length !== 8) {
+    setFieldError(phone, 'phone', ERR_PHONE);
+    if (!firstBad) firstBad = phone;
+  }
+
   if (firstBad) firstBad.focus();
   return !firstBad;
 }
@@ -224,7 +249,8 @@ function clearErrorOnInput(e) {
   if (!el.classList || !el.classList.contains('is-bad')) return;
 
   const keys = { fFrom: 'route', fTo: 'route', fDate: 'date', fTime: 'time', fSeats: 'seats',
-    fLivestock: 'livestock', fCargoKg: 'cargoKg', fCargoWhat: 'cargoWhat' };
+    fLivestock: 'livestock', fCargoKg: 'cargoKg', fCargoWhat: 'cargoWhat',
+    fName: 'name', fPhone: 'phone' };
   const key = keys[el.id];
   if (!key) return;
 
@@ -264,6 +290,26 @@ function onModalKeydown(e) {
   trapFocus(e);
 }
 
+let formBusy = false;   /* илгээж байх хооронд давхар дарахаас хамгаална */
+
+/* Улаанбаатарын өнөөдрөөс n хоногийн дараах огноо «YYYY-MM-DD» (UTC+8) */
+function ubDay(n) {
+  return new Date(Date.now() + 8 * 3600e3 + n * 86400e3).toISOString().slice(0, 10);
+}
+
+/* «Нийтлэх» товч: зөвшөөрөл тэмдэглээгүй бол идэвхгүй. Илгээж байхад «Нийтэлж байна» */
+function syncSubmit() {
+  const form = document.getElementById('orderForm');
+  const submit = document.querySelector('#orderModal [type="submit"]');
+  if (!form || !submit) return;
+  const editing = !!form.dataset.editId;
+  const consent = document.getElementById('fConsent');
+  submit.textContent = formBusy
+    ? (editing ? 'Хадгалж байна' : 'Нийтэлж байна')
+    : (editing ? 'Хадгалах' : 'Нийтлэх');
+  submit.disabled = formBusy || (!editing && !(consent && consent.checked));
+}
+
 function openModal() {
   const modal = document.getElementById('orderModal');
   if (!modal) return;
@@ -273,19 +319,27 @@ function openModal() {
   document.body.classList.add('is-locked');
   document.addEventListener('keydown', onModalKeydown);
 
-  /* Өнгөрсөн өдрийг сонгуулахгүй (BUILD §4) */
+  /* Явах огноо: Улаанбаатарын өнөөдрөөс 60 хоног хүртэл (сервер ижил шалгана) */
   const date = document.getElementById('fDate');
-  date.min = new Date().toISOString().slice(0, 10);
+  date.min = ubDay(0);
+  date.max = ubDay(60);
 
-  /* Шинэ зар бол профайлд хадгалсан «Жолооч / Захиалагч»-ийг сонгоно */
+  /* Шинэ зар бол профайлд хадгалсан үүрэг, нэр, утсыг урьдчилж бөглөнө */
   const form = document.getElementById('orderForm');
-  const profile = readProfile();
-  if (!form.dataset.editId && profile.role) {
-    const radio = form.querySelector('input[name="role"][value="' + profile.role + '"]');
-    if (radio) radio.checked = true;
+  if (!form.dataset.editId) {
+    const profile = readProfile();
+    if (profile.role) {
+      const radio = form.querySelector('input[name="role"][value="' + profile.role + '"]');
+      if (radio) radio.checked = true;
+    }
+    const name = document.getElementById('fName');
+    const phone = document.getElementById('fPhone');
+    if (!name.value && profile.name) name.value = profile.name;
+    if (!phone.value && profile.phone) phone.value = formatPhone(profile.phone);
   }
 
   syncRoleUI();
+  syncSubmit();
   document.querySelector('#orderModal .modal-x').focus();
 }
 
@@ -362,6 +416,7 @@ function initModal() {
 
   form.addEventListener('input', clearErrorOnInput);
   form.addEventListener('change', clearErrorOnInput);
+  document.getElementById('fConsent').addEventListener('change', syncSubmit);
 
   /* drivers.html-ийн «Захиалга» → index.html#order — энд ирээд нээгдэнэ */
   if (location.hash === '#order') {
@@ -369,17 +424,13 @@ function initModal() {
     openModal();
   }
 
-  /* profile.html-ийн «Засах» → index.html#edit-<id> — бөглөсөн формтой нээнэ */
-  const editMatch = /^#edit-(\d+)$/.exec(location.hash);
+  /* profile.html-ийн «Засах» → index.html#edit-<uuid> — бөглөсөн формтой нээнэ.
+     Зар cache-д байвал шууд, үгүй бол жагсаалт ачаалж дууссаны дараа (openPendingEdit) */
+  const editMatch = /^#edit-([0-9a-f-]{36})$/i.exec(location.hash);
   if (editMatch) {
     history.replaceState(null, '', location.pathname + location.search);
-    const post = readPosts().find((p) => String(p.id) === editMatch[1]);
-    if (post) {
-      fillForm(form, post);
-      openModal();
-    } else {
-      showToast('Зар олдсонгүй — устгагдсан байж магадгүй');
-    }
+    pendingEditId = editMatch[1].toLowerCase();
+    openPendingEdit(false);
   }
 
   /* Mobile доод цэсийн «Захиалга» гэх мэт нэмэлт нээгчид */
@@ -390,65 +441,122 @@ function initModal() {
     });
   }
 
-  let busy = false;   /* зураг шахаж байх хооронд давхар дарахаас хамгаална */
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (busy || !validateForm()) return;
-    busy = true;
-
-    const post = await readForm(form);
-    const myPosts = { href: 'profile.html', label: 'Миний зарууд' };
-
-    if (form.dataset.editId) {
-      /* Засах — id, нийтэлсэн цаг хэвээр, хуучин зураг хадгалагдана */
-      const old = readPosts().find((p) => String(p.id) === form.dataset.editId);
-      if (old) {
-        post.id = old.id;
-        post.createdAt = old.createdAt;
-        if (!post.photo && form.dataset.keepPhoto) post.photo = old.photo;
-      }
-      const saved = updatePost(post);
-      if (saved === 'failed') {
-        /* Хадгалагдаагүй — modal нээлттэй, оруулсан утга хэвээр, карт өөрчлөгдөхгүй */
-        showStorageWriteError();
-        busy = false;
-        return;
-      }
-      if (saved === 'no-photo') post.photo = '';
-      replacePostCard(post);
-      closeModal();
-      resetForm(form);
-      showToast(saved === 'ok' ? 'Зар шинэчлэгдлээ' : 'Зар шинэчлэгдлээ. Зураг хэт том тул хадгалагдсангүй',
-        myPosts, saved !== 'ok');
-      busy = false;
-      return;
+    if (formBusy || !validateForm()) return;
+    formBusy = true;
+    syncSubmit();
+    try {
+      if (form.dataset.editId) await submitEdit(form);
+      else await submitNew(form);
+    } finally {
+      formBusy = false;
+      syncSubmit();
     }
-
-    const saved = savePost(post);
-    if (saved === 'failed') {
-      /* Хадгалагдаагүй — карт нэмэхгүй, modal нээлттэй, оруулсан утга хэвээр */
-      showStorageWriteError();
-      busy = false;
-      return;
-    }
-    if (saved === 'no-photo') post.photo = '';
-    clearFilters();   /* шүүлтүүр идэвхтэй байсан ч шинэ зар заавал харагдана */
-    const card = prependPost(post);
-
-    closeModal();
-    resetForm(form);
-    /* Мобайлд hero-гийн доор үлдэхгүй — хүн шинэ тасалбараа хэвлэгдэж байхад нь харна */
-    if (card) card.scrollIntoView({ block: 'start', behavior: reduceMotion() ? 'auto' : 'smooth' });
-    /* Сервер байхгүй — зар зөвхөн энэ төхөөрөмжид хадгалагдана, жолооч нарт хүрэхгүй */
-    showToast(saved === 'ok'
-      ? 'Захиалга энэ төхөөрөмжид хадгалагдлаа (туршилт)'
-      : 'Захиалга энэ төхөөрөмжид хадгалагдлаа (туршилт). Зураг хэт том тул хадгалагдсангүй',
-      myPosts, saved !== 'ok');
-    busy = false;
   });
 }
 
 document.addEventListener('DOMContentLoaded', initModal);
+
+/* ── Сервертэй холбогдсон нийтлэх, засах (3H.2) ── */
+
+let pendingEditId = '';
+
+/* #edit-<uuid>-ээр ирсэн бол зарыг cache-ээс олж бөглөсөн цонх нээнэ.
+   final=true (жагсаалт ачаалж дууссан) боловч олдоогүй бол мэдэгдэнэ */
+function openPendingEdit(final) {
+  if (!pendingEditId) return;
+  const form = document.getElementById('orderForm');
+  const row = readAdsCache().ads.find((a) => a.id === pendingEditId);
+  if (row && isMyAd(row.id)) {
+    pendingEditId = '';
+    fillForm(form, dbRowToPost(row));
+    openModal();
+  } else if (final) {
+    pendingEditId = '';
+    showToast('Зар олдсонгүй — устгагдсан эсвэл хугацаа нь өнгөрсөн байж магадгүй', null, true);
+  }
+}
+
+async function submitNew(form) {
+  const consent = document.getElementById('fConsent');
+  if (!consent.checked) return;   /* товч идэвхгүй ч давхар хамгаалалт */
+
+  const payload = readAdPayload(form);
+  const phone = cleanPhone(document.getElementById('fPhone').value);
+  const honeypot = document.getElementById('fHoneypot').value;
+  const failText = 'Нийтэлж чадсангүй. Дахин оролдоно уу.';
+
+  let made;
+  try {
+    made = await dbCreateAd(Object.assign({}, payload, { phone: phone, consent: true }), honeypot);
+  } catch (err) {
+    /* Modal нээлттэй, оруулсан утга хэвээр — дахин оролдоно */
+    showToast(dbErrorMessage(err, failText), null, true);
+    return;
+  }
+  if (!made || !made.id || !made.token) {
+    showToast(failText, null, true);
+    return;
+  }
+
+  /* Токен нэг л удаа ирнэ — хөтөчид хадгална. Хадгалж чадаагүй бол хэлнэ */
+  const kept = rememberMyAd(made.id, made.token);
+  const row = Object.assign({}, payload, { id: made.id, created_at: new Date().toISOString() });
+  cacheUpsertAd(row);
+
+  /* Дахин нийтлэхэд нэр, утсыг дахин бичихгүй байхаар профайлд (хоосон бол) хадгална */
+  const prof = readProfile();
+  if (!prof.name || !prof.phone) {
+    saveProfile(Object.assign({}, prof, {
+      name: prof.name || payload.author_name,
+      phone: prof.phone || phone,
+      role: prof.role || payload.role
+    }));
+  }
+
+  clearFilters();   /* шүүлтүүр идэвхтэй байсан ч шинэ зар заавал харагдана */
+  const card = prependPost(dbRowToPost(row));
+  closeModal();
+  resetForm(form);
+  if (card) card.scrollIntoView({ block: 'start', behavior: reduceMotion() ? 'auto' : 'smooth' });
+  if (kept) {
+    showToast('Зар нийтлэгдлээ', { href: 'profile.html', label: 'Миний зарууд' });
+  } else {
+    showToast('Зар нийтлэгдлээ. Гэхдээ энэ хөтөч засах эрхийг хадгалж чадсангүй, зараа засах боломжгүй', null, true);
+  }
+}
+
+async function submitEdit(form) {
+  const id = form.dataset.editId;
+  const token = myAdToken(id);
+  if (!token) {
+    showToast('Энэ зарыг засах эрх энэ хөтөч дээр алга', null, true);
+    return;
+  }
+
+  const patch = readAdPatch(form);
+  let ok;
+  try {
+    ok = await dbUpdateAd(id, token, patch);
+  } catch (err) {
+    showToast(dbErrorMessage(err, 'Засаж чадсангүй. Дахин оролдоно уу.'), null, true);
+    return;
+  }
+  if (!ok) {
+    showToast('Зар засагдсангүй — зар хаагдсан эсвэл эрх хүчингүй байна', null, true);
+    return;
+  }
+
+  const old = readAdsCache().ads.find((a) => a.id === id) ||
+    { id: id, created_at: new Date().toISOString(), role: formRole(form) };
+  const row = Object.assign({}, old, patch);
+  cacheUpsertAd(row);
+  replacePostCard(dbRowToPost(row));
+  closeModal();
+  resetForm(form);
+  showToast('Зар шинэчлэгдлээ', { href: 'profile.html', label: 'Миний зарууд' });
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    ПОСТ ҮҮСГЭХ — BUILD.md §4 «Илгээсний дараа», 3-р алхам
@@ -505,36 +613,51 @@ function kindCapacity(post) {
   return '';
 }
 
-/* Формын утгуудаас хадгалах пост объект үүсгэнэ */
-async function readForm(form) {
+/* Хэн нийтэлж байгаа: засахад radio disabled боловч :checked-ээр уншигдана */
+function formRole(form) {
+  const r = form.querySelector('input[name="role"]:checked');
+  return r && r.value === 'passenger' ? 'passenger' : 'driver';
+}
+
+/* Формоос create_ad-ийн `p` (серверийн баганын нэрээр). Сонгоогүй төрлийн талбар null.
+   phone, consent-ыг дуудагч нэмнэ. */
+function readAdPayload(form) {
   const fd = new FormData(form);
-  const role = fd.get('role') === 'passenger' ? 'passenger' : 'driver';
+  const role = formRole(form);
   const isDriver = role === 'driver';
-  const photoInput = document.getElementById('fPhoto');
+  const kind = kindOf(fd);
+  const car = isDriver ? profileCar() : null;
+  const text = (key) => String(fd.get(key) || '').trim();
+  const whole = (key) => { const n = Math.round(Number(fd.get(key))); return n > 0 ? n : null; };
 
   return {
-    id: Date.now(),
-    createdAt: Date.now(),
     role: role,
-    kind: fd.get('kind') || 'passenger',
-    from: fd.get('from'),
-    to: fd.get('to'),
-    date: fd.get('date'),
-    time: fd.get('time'),
-    seats: Number(fd.get('seats')) || 1,
-    /* Төрөл бүрийн мэдээлэл — сонгоогүй төрлийнх хоосон */
-    livestock: kindOf(fd) === 'livestock' ? String(fd.get('livestock') || '').trim() : '',
-    cargoKg: kindOf(fd) === 'cargo' ? Number(fd.get('cargoKg')) || 0 : 0,
-    cargoWhat: kindOf(fd) === 'cargo' ? String(fd.get('cargoWhat') || '').trim() : '',
-    gherFurniture: kindOf(fd) === 'moving' && fd.get('gherFurniture') === 'on',
-    gherHelp: kindOf(fd) === 'moving' && fd.get('gherHelp') === 'on',
-    price: isDriver && fd.get('price') ? Number(fd.get('price')) : 0,
-    note: String(fd.get('note') || '').trim(),
-    photo: isDriver ? await shrinkPhoto(photoInput.files && photoInput.files[0]) : '',
-    /* Нийтэлсэн үеийн профайл — дараа нь профайл өөрчлөгдсөн ч зар хэвээр */
-    author: readProfile().name || '',
-    car: isDriver ? profileCar() : null
+    kind: kind,
+    from_loc: fd.get('from'),
+    to_loc: fd.get('to'),
+    depart_date: fd.get('date'),
+    depart_time: fd.get('time') || null,
+    seats: kind === 'passenger' ? (whole('seats') || 1) : null,
+    livestock: kind === 'livestock' ? text('livestock') : null,
+    cargo_kg: kind === 'cargo' ? whole('cargoKg') : null,
+    cargo_what: kind === 'cargo' ? text('cargoWhat') : null,
+    gher_furniture: kind === 'moving' ? fd.get('gherFurniture') === 'on' : null,
+    gher_help: kind === 'moving' ? fd.get('gherHelp') === 'on' : null,
+    price: isDriver ? whole('price') : null,
+    note: text('note') || null,
+    author_name: text('name'),
+    car_name: car ? car.name : null,
+    car_type: car ? car.type : null
   };
+}
+
+/* update_ad-д: үүрэг, машин, утас засагдахгүй */
+function readAdPatch(form) {
+  const p = readAdPayload(form);
+  delete p.role;
+  delete p.car_name;
+  delete p.car_type;
+  return p;
 }
 
 /* ── ПРОФАЙЛ (profile.html) — нэвтрэх систем ирэх хүртэл энэ browser-т ── */
@@ -611,12 +734,16 @@ function toggleSaved(id) {
   return at === -1;
 }
 
-/* Засах гэж буй зарын утгаар формыг бөглөнө */
+/* Засах гэж буй зарын утгаар формыг бөглөнө (post = dbRowToPost-ийн хэлбэр) */
 function fillForm(form, post) {
   resetForm(form);
   form.dataset.editId = String(post.id);
+  form.dataset.origDate = post.date || '';
   const role = form.querySelector('input[name="role"][value="' + post.role + '"]');
   if (role) role.checked = true;
+  /* update_ad үүргийг солихгүй, утсыг засахгүй, зөвшөөрөл аль хэдийн өгөгдсөн */
+  for (const r of form.querySelectorAll('input[name="role"]')) r.disabled = true;
+  for (const node of form.querySelectorAll('[data-new-only]')) node.hidden = true;
   const kind = form.querySelector('input[name="kind"][value="' + (post.kind || 'passenger') + '"]');
   if (kind) kind.checked = true;
   document.getElementById('fGherFurniture').checked = !!post.gherFurniture;
@@ -632,16 +759,10 @@ function fillForm(form, post) {
   set('fLivestock', post.livestock);
   set('fCargoKg', post.cargoKg || '');
   set('fCargoWhat', post.cargoWhat);
-  if (post.photo) {
-    const box = document.getElementById('photoPreview');
-    box.querySelector('img').src = post.photo;
-    box.hidden = false;
-    form.dataset.keepPhoto = '1';
-  }
+  set('fName', post.author);
   document.getElementById('orderTitle').textContent = 'Зар засах';
-  const submit = document.querySelector('#orderModal [type="submit"]');
-  if (submit) submit.textContent = 'Хадгалах';
   syncRoleUI();
+  syncSubmit();
 }
 
 /* localStorage доторх зарыг солино (байрлал нь хэвээр).
@@ -782,6 +903,9 @@ const KIND_BADGE = {
 /* Машины жижиг дүрс — тогтмол SVG (хэрэглэгчийн өгөгдөл биш) */
 const CAR_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 16.5h15M6.5 16.5l1.4-4.6A2 2 0 0 1 9.8 10.5h4.4a2 2 0 0 1 1.9 1.4l1.4 4.6M4.5 16.5v2.5M19.5 16.5v2.5"/><circle cx="8.5" cy="16.5" r="1.3"/><circle cx="15.5" cy="16.5" r="1.3"/></svg>';
 
+/* Хүний төвийг сахисан дүрс — нэргүй, бусдын зарт (DESIGN §6: нэр байвал эхний үсэг) */
+const PERSON_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c.8-3.4 3.6-5 7-5s6.2 1.6 7 5"/></svg>';
+
 /* Пост объектоос ТАСАЛБАР хэлбэрийн картын DOM үүсгэнэ (DESIGN §1, хаан 2026-10-09):
    зүүн — цаг, чиглэл, суудал, хэн; баруун stub — үнэ, Холбогдох.
    Хэрэглэгчийн текстийг innerHTML биш textContent-оор — HTML орсон ч код болж ажиллахгүй.
@@ -789,8 +913,9 @@ const CAR_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d
    post.capacityText, post.day (жишээ — өнөөдрөөс хэд хоног), post.hidePerson (нэрийг давтахгүй). */
 function createPost(post) {
   const isDriver = post.role === 'driver';
-  const card = el('article', post.hidePerson ? 'post-card' : 'post-card is-mine');
+  const card = el('article', post.mine ? 'post-card is-mine' : 'post-card');
   card.dataset.postId = post.id;
+  if (post.remote) card.dataset.ad = '1';   /* серверийн зар — дахин зурахад тэдгээрийг л арилгана */
 
   /* Жолоочийн БОДИТ зураг байвал л дээд тууз — хоосон панел зурахгүй */
   if (isDriver && post.photo) {
@@ -879,13 +1004,19 @@ function createPost(post) {
    Шинэ жолооч «0 үнэлгээ» биш «Шинэ гишүүн» (DESIGN §6). */
 function personNode(post, isDriver) {
   const person = el('div', 'post-person');
-  const headerAvatar = document.querySelector('.header .avatar');
-  const initial = post.author ? post.author.charAt(0).toUpperCase()
-    : (headerAvatar ? headerAvatar.textContent.trim() : 'Т');
-  const avatar = el('span', 'person-avatar', initial);
+  /* Нэргүй зарт: өөрийн зар бол header-ийн үсэг, серверээс ирсэн бусдынх бол хүний дүрс */
+  const avatar = el('span', 'person-avatar');
+  if (post.author) {
+    avatar.textContent = post.author.charAt(0).toUpperCase();
+  } else if (post.remote && !post.mine) {
+    avatar.innerHTML = PERSON_ICON;
+  } else {
+    const headerAvatar = document.querySelector('.header .avatar');
+    avatar.textContent = headerAvatar ? headerAvatar.textContent.trim() : 'Т';
+  }
   avatar.setAttribute('aria-hidden', 'true');
   const main = el('div', 'person-main');
-  main.appendChild(el('p', 'person-name', post.author || 'Таны зар'));
+  main.appendChild(el('p', 'person-name', post.author || (post.remote ? 'Нэр заагаагүй' : 'Таны зар')));
   const meta = el('p', 'person-meta');
   if (isDriver) meta.appendChild(el('span', 'chip-new', 'Шинэ гишүүн'));
   else meta.textContent = 'Захиалагч';
@@ -921,6 +1052,17 @@ function stubNode(post, isDriver) {
     btn.type = 'button';
     btn.setAttribute('aria-label', 'Холбогдох: ' + (post.author || 'жолооч') + ' (жишээ зар)');
     stub.appendChild(btn);
+  } else if (post.remote) {
+    /* Серверийн зар: утас жагсаалтад ирдэггүй — «Дугаар харах» дарахад л (Ш1 б) */
+    if (post.mine) {
+      stub.appendChild(el('span', 'stub-unit', 'Таны зар'));
+    } else {
+      const btn = el('button', 'btn btn-contact btn-phone', 'Дугаар харах');
+      btn.type = 'button';
+      btn.dataset.adId = post.id;
+      btn.setAttribute('aria-label', 'Дугаар харах: ' + (post.author || 'зар нийтэлсэн хүн'));
+      stub.appendChild(btn);
+    }
   }
   return stub;
 }
@@ -1036,9 +1178,22 @@ function initOfflineNotice() {
 
 document.addEventListener('DOMContentLoaded', initOfflineNotice);
 
-/* Хадгалсан зарыг жагсаалтын эхэнд зурна. storage хаалттай бол «зар алга» гэж
-   худал хэлэхгүй — жагсаалтын дээр алдааны төлөв гаргана (доорх жишээ зар статик). */
-function renderSavedPosts(list) {
+/* Серверийн зарыг жагсаалтын эхэнд зурна (доорх 8 жишээ зар 3H.3 хүртэл статик).
+   Эхлээд cache-ийг шууд зурж, сүлжээгээс шинэчилнэ. Сүлжээ тасарвал cache + «Холболт тасарлаа». */
+const SERVER_ERROR = {
+  title: 'Зарын мэдээлэл ачаалж чадсангүй.',
+  text: 'Түр хүлээгээд дахин оролдоно уу.'
+};
+
+function renderRemoteAds(list, rows) {
+  for (const old of list.querySelectorAll('.post-card[data-ad]')) old.remove();
+  const frag = document.createDocumentFragment();
+  for (const row of rows) frag.appendChild(createPost(dbRowToPost(row)));
+  list.insertBefore(frag, list.firstElementChild);
+  applyFilters();   /* идэвхтэй шүүлтүүр, тоо, хоосон төлөв шинэчлэгдэнэ */
+}
+
+async function loadFeed(list) {
   let slot = document.getElementById('feedError');
   if (!slot) {
     slot = el('div');
@@ -1046,34 +1201,39 @@ function renderSavedPosts(list) {
     list.parentNode.insertBefore(slot, list);
   }
   slot.textContent = '';
-  storageBroken = false;
 
-  showFeedSkeleton(list);
+  /* Хугацаа нь өнгөрсөн зарыг cache-ээс харуулахгүй (сервер ч өчигдрөөс хойшийг л өгнө) */
+  const cache = readAdsCache();
+  const cached = cache.ads.filter((a) => a.depart_date >= ubDay(-1));
+  if (cached.length) renderRemoteAds(list, cached);
+  else showFeedSkeleton(list);
+
   try {
-    const posts = readPosts();
-    if (storageBroken) {
-      renderErrorState(slot, {
-        title: STORAGE_ERROR.title,
-        text: STORAGE_ERROR.text,
-        onRetry: () => renderSavedPosts(list)
-      });
-      return;
-    }
-    const frag = document.createDocumentFragment();
-    for (const post of posts) {
-      if (post && post.from && post.to) frag.appendChild(createPost(post));
-    }
-    list.insertBefore(frag, list.firstElementChild);
+    const rows = await dbListAds();
+    writeAdsCache(rows);
+    renderRemoteAds(list, rows);
+  } catch (err) {
+    const net = err.dbKind === 'network';
+    const stale = cached.length
+      ? 'Сүүлд хадгалсан жагсаалтыг харуулж байна' + (cache.savedAt ? ' (' + formatAgo(cache.savedAt) + ')' : '') +
+        '. Интернэтээ шалгаад дахин оролдоно уу.'
+      : '';
+    renderErrorState(slot, {
+      title: net ? NETWORK_ERROR.title : SERVER_ERROR.title,
+      text: stale || (net ? NETWORK_ERROR.text : SERVER_ERROR.text),
+      onRetry: () => loadFeed(list)
+    });
   } finally {
     hideFeedSkeleton(list);
+    openPendingEdit(true);
   }
 }
 
-/* Хуудас ачаалахад хадгалсан постууд эхэнд, дараа нь 8 жишээ пост */
+/* Хуудас ачаалахад серверийн зарууд эхэнд, дараа нь 8 жишээ пост */
 function loadPosts() {
   const list = document.querySelector('.post-list:not(.profile-posts)');
   if (!list) return;
-  renderSavedPosts(list);
+  loadFeed(list);
 
   /* «Дөнгөж сая» минут тутамд «1 минутын өмнө» болж шинэчлэгдэнэ */
   setInterval(() => {
@@ -1086,22 +1246,16 @@ function loadPosts() {
 /* Формыг анхны байдалд нь буцаана — дараагийн захиалга цэвэрхэн эхэлнэ */
 function resetForm(form) {
   form.reset();
-  const box = document.getElementById('photoPreview');
-  if (box && !box.hidden) {
-    const img = box.querySelector('img');
-    if (img.src && img.src.indexOf('blob:') === 0) URL.revokeObjectURL(img.src);
-    img.removeAttribute('src');
-    box.hidden = true;
-  }
   for (const bad of form.querySelectorAll('.is-bad')) bad.classList.remove('is-bad');
   for (const box2 of form.querySelectorAll('.fld-err')) box2.hidden = true;
   delete form.dataset.editId;
-  delete form.dataset.keepPhoto;
+  delete form.dataset.origDate;
+  for (const node of form.querySelectorAll('[data-new-only]')) node.hidden = false;
+  for (const r of form.querySelectorAll('input[name="role"]')) r.disabled = false;
   const title = document.getElementById('orderTitle');
   if (title) title.textContent = 'Шинэ захиалга';
-  const submit = document.querySelector('#orderModal [type="submit"]');
-  if (submit) submit.textContent = 'Захиалга үүсгэх';
   syncRoleUI();
+  syncSubmit();
 }
 
 /* Дээд талын мэдэгдэл — 3 секундын дараа арилна (BUILD §4). Ногоон нь амжилт.
@@ -1291,7 +1445,7 @@ function initFilters() {
     e.preventDefault();
     clearTimeout(timer);
     if (!document.querySelector('.post-list:not(.profile-posts), .driver-list')) {
-      location.href = 'drivers.html' + (input.value.trim() ? '?q=' + encodeURIComponent(input.value.trim()) : '');
+      location.href = 'index.html' + (input.value.trim() ? '?q=' + encodeURIComponent(input.value.trim()) : '');
       return;
     }
     applyFilters();
@@ -1320,6 +1474,13 @@ function initFilters() {
 
   /* Утсаа хэвтүүлж өргөн болбол дэлгэц дүүрэн хайлтыг хаана */
   mobileQuery.addEventListener('change', () => { if (!mobileQuery.matches) closeSearch(); });
+
+  /* Өөр хуудаснаас хайлтаар ирсэн бол (index.html?q=…) хайлтыг бөглөнө */
+  const q = new URLSearchParams(location.search).get('q');
+  if (q && document.querySelector('.post-list:not(.profile-posts)')) {
+    input.value = q;
+    applyFilters();
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1395,10 +1556,45 @@ document.addEventListener('DOMContentLoaded', initThemeToggle);
 /* loadPosts-ийн дараа — хадгалсан постууд ч шүүгдэнэ */
 document.addEventListener('DOMContentLoaded', initFilters);
 
-/* «Холбогдох» / «Залгах» — жишээ өгөгдөлд бодит дугаар алга, товч юу ч хийхгүй байж
-   болохгүй. Нэг delegation нь бүх хуудас, динамикаар үүссэн картыг хамарна. */
+/* «Дугаар харах» → get_phone RPC → товч «Залгах» болно. Ачаалж байх, алдаа DESIGN §7-оор */
+const phoneMemo = new Map();   /* энэ хуудасны хугацаанд: давтан дарахад дахин тоологдохгүй */
+
+async function revealPhone(btn) {
+  const id = btn.dataset.adId;
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Дугаар ачаалж байна';
+  try {
+    const phone = phoneMemo.get(id) || await dbGetPhone(id);
+    if (!phone) {
+      btn.textContent = 'Зар хаагдсан';
+      showToast('Энэ зар хаагдсан эсвэл хугацаа нь өнгөрсөн байна', null, true);
+      return;
+    }
+    phoneMemo.set(id, phone);
+    const digits = cleanPhone(phone);
+    const num = el('span', 'stub-unit', formatPhone(digits));
+    const call = el('a', 'btn btn-contact btn-phone', 'Залгах');
+    call.href = 'tel:' + digits;
+    call.setAttribute('aria-label', 'Залгах: ' + formatPhone(digits));
+    btn.replaceWith(num, call);
+    call.focus();
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = label;
+    showToast(dbErrorMessage(err, 'Дугаар авч чадсангүй. Дахин оролдоно уу.'), null, true);
+  }
+}
+
+/* «Холбогдох» (жишээ зар) / «Дугаар харах» (серверийн зар). Нэг delegation нь
+   бүх хуудас, динамикаар үүссэн картыг хамарна. */
 document.addEventListener('click', (e) => {
-  if (e.target.closest('.btn-contact')) {
+  const phoneBtn = e.target.closest('.btn-phone[data-ad-id]');
+  if (phoneBtn) {
+    revealPhone(phoneBtn);
+    return;
+  }
+  if (e.target.closest('.btn-contact:not(.btn-phone)')) {
     showToast('Жишээ зар — холбогдох боломжгүй', null, true);
   }
 });

@@ -2,23 +2,12 @@
    Уналага.мн — profile.js
    Профайл хуудас (Төлөвлөгөө Фаз 1.1 + 1.2).
    Миний мэдээлэл · Миний машин · Миний зарууд (засах, устгах) · Хадгалсан жолооч.
-   app.js, drivers.js-ийн ДАРАА ачаална (readProfile, readPosts, createPost,
+   app.js, drivers.js-ийн ДАРАА ачаална (readProfile, readPosts, createPost, db.js-ийн dbListAds, dbCloseAd,
    DRIVERS, CAR_TYPES, createDriverCard, el ашиглана).
    Нэвтрэх систем ирэх хүртэл бүгд энэ browser-ийн localStorage-д.
    ═══════════════════════════════════════════════════════════════════ */
 
 const ROLE_LABEL = { driver: 'Жолооч', passenger: 'Захиалагч' };
-
-/* «9911 2233», «9911-2233» → «99112233». Хоосон бол хоосон. */
-function cleanPhone(v) {
-  return String(v || '').replace(/\D/g, '');
-}
-
-/* «99112233» → «9911-2233» */
-function formatPhone(v) {
-  const d = cleanPhone(v);
-  return d.length === 8 ? d.slice(0, 4) + '-' + d.slice(4) : d;
-}
 
 function profileSection(title, id) {
   const box = el('section', 'profile-section');
@@ -215,12 +204,12 @@ function renderCarSection(p) {
   return box;
 }
 
-/* ── Миний зарууд: засах, устгах ── */
+/* ── Миний зарууд: серверийн зарууд, засах/устгах (токеноор) ── */
 function renderMyPosts() {
-  const posts = readPosts().filter((p) => p && p.from && p.to);
-  const box = profileSection('Миний зарууд' + (posts.length ? ' (' + posts.length + ')' : ''), 'myPosts');
+  const mine = readMyAds();
+  const box = profileSection('Миний зарууд', 'myPosts');
 
-  if (!posts.length) {
+  if (!mine.length) {
     box.appendChild(el('p', 'profile-empty', 'Та одоогоор зар нийтлээгүй байна.'));
     const a = el('a', 'btn btn-primary', 'Захиалга үүсгэх');
     a.href = 'index.html#order';
@@ -228,22 +217,86 @@ function renderMyPosts() {
     return box;
   }
 
+  /* Ачаалж байх skeleton (DESIGN §7) */
+  box.setAttribute('aria-busy', 'true');
+  const skel = el('div', 'driver-skeleton');
+  skel.setAttribute('aria-hidden', 'true');
+  skel.innerHTML = '<div class="driver-skeleton-head"><span class="skel skel-avatar"></span>' +
+    '<div class="driver-skeleton-main"><span class="skel skel-name"></span>' +
+    '<span class="skel skel-line skel-line-short"></span></div></div>' +
+    '<span class="skel skel-line"></span><span class="skel skel-btn"></span>';
+  box.appendChild(skel);
+  fillMyPosts(box, mine, skel);
+  return box;
+}
+
+async function fillMyPosts(box, mine, skel) {
+  let rows;
+  let offline = false;
+  try {
+    rows = await dbListAds(mine.map((a) => a.id));
+    for (const row of rows) cacheUpsertAd(row);   /* «Засах» цонх cache-ээс олно */
+  } catch (err) {
+    const ids = new Set(mine.map((a) => a.id));
+    rows = readAdsCache().ads.filter((a) => ids.has(a.id));
+    offline = true;
+  }
+  skel.remove();
+  box.removeAttribute('aria-busy');
+
+  const h2 = box.querySelector('.profile-h2');
+  if (h2 && rows.length) h2.textContent = 'Миний зарууд (' + rows.length + ')';
+
+  if (offline) {
+    renderErrorState(box, {
+      title: NETWORK_ERROR.title,
+      text: rows.length ? 'Сүүлд хадгалсан мэдээллийг харуулж байна.' : NETWORK_ERROR.text,
+      onRetry: renderAll
+    });
+  }
+
+  if (!rows.length) {
+    if (!offline) {
+      box.appendChild(el('p', 'profile-empty', 'Идэвхтэй зар алга. Зарын хугацаа өнгөрсөн эсвэл устгагдсан байна.'));
+      const a = el('a', 'btn btn-primary', 'Захиалга үүсгэх');
+      a.href = 'index.html#order';
+      box.appendChild(a);
+    }
+    return;
+  }
+
   const list = el('div', 'post-list profile-posts');
-  for (const post of posts) {
-    const card = createPost(Object.assign({}, post, { hidePerson: true }));
+  for (const row of rows) {
+    const card = createPost(Object.assign(dbRowToPost(row), { hidePerson: true }));
     const actions = el('div', 'post-actions');
     const edit = el('a', 'btn btn-ghost', 'Засах');
-    edit.href = 'index.html#edit-' + post.id;
+    edit.href = 'index.html#edit-' + row.id;
     const del = el('button', 'btn btn-ghost btn-danger', 'Устгах');
     del.type = 'button';
-    del.addEventListener('click', () => {
+    del.addEventListener('click', async () => {
       /* Буцаах боломжгүй тул нэг удаа асууна */
-      if (!window.confirm(post.from + ' — ' + post.to + ' зарыг устгах уу?')) return;
-      if (!deletePost(post.id)) { showStorageWriteError(); return; }
-      renderAll();
-      showToast('Зар устгагдлаа');
-      const h = document.querySelector('#myPosts .profile-h2');
-      if (h) { h.tabIndex = -1; h.focus(); }
+      if (!window.confirm(row.from_loc + ' — ' + row.to_loc + ' зарыг устгах уу?')) return;
+      del.disabled = true;
+      del.textContent = 'Устгаж байна';
+      try {
+        const ok = await dbCloseAd(row.id, myAdToken(row.id));
+        if (!ok) {
+          del.disabled = false;
+          del.textContent = 'Устгах';
+          showToast('Устгаж чадсангүй — зар хаагдсан эсвэл эрх хүчингүй байна', null, true);
+          return;
+        }
+        forgetMyAd(row.id);
+        cacheRemoveAd(row.id);
+        renderAll();
+        showToast('Зар устгагдлаа');
+        const h = document.querySelector('#myPosts .profile-h2');
+        if (h) { h.tabIndex = -1; h.focus(); }
+      } catch (err) {
+        del.disabled = false;
+        del.textContent = 'Устгах';
+        showToast(dbErrorMessage(err, 'Устгаж чадсангүй. Дахин оролдоно уу.'), null, true);
+      }
     });
     actions.appendChild(edit);
     actions.appendChild(del);
@@ -251,6 +304,24 @@ function renderMyPosts() {
     list.appendChild(card);
   }
   box.appendChild(list);
+}
+
+/* Серверт нийтлээгүй хуучин туршилтын зар (localStorage `unalaga_posts`) — нуугдахгүй, цэвэрлэх боломжтой */
+function renderLegacySection() {
+  const old = readPosts().length;
+  if (!old) return null;
+  const box = profileSection('Хуучин туршилтын зар (' + old + ')', 'legacyPosts');
+  box.appendChild(el('p', 'profile-empty',
+    'Эдгээр зар зөвхөн энэ төхөөрөмжид байна, серверт нийтлэгдээгүй тул хэнд ч харагдахгүй.'));
+  const clear = el('button', 'btn btn-ghost', 'Хуучин зарыг цэвэрлэх');
+  clear.type = 'button';
+  clear.addEventListener('click', () => {
+    if (!window.confirm(old + ' хуучин зарыг энэ төхөөрөмжөөс устгах уу?')) return;
+    if (!writeJSON(STORAGE_KEY, [])) { showStorageWriteError(); return; }
+    renderAll();
+    showToast('Хуучин зар цэвэрлэгдлээ');
+  });
+  box.appendChild(clear);
   return box;
 }
 
@@ -312,7 +383,8 @@ function renderAll() {
   const car = renderCarSection(p);
   if (car) root.appendChild(car);
   root.appendChild(renderMyPosts());
-  root.appendChild(renderSaved());
+  const legacy = renderLegacySection();
+  if (legacy) root.appendChild(legacy);
 }
 
 document.addEventListener('DOMContentLoaded', renderAll);

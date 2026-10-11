@@ -56,22 +56,25 @@
   <meta name="robots" content="noindex">
 
   <!-- Facebook, Messenger-ээр хуваалцахад гарах preview. JS ажиллуулдаггүй
-       тул статик утга. Зураг: hero-гийн дүр зураг, 1200×630 (og-image.jpg). -->
+       тул статик утга. Зураг: hero-гийн шөнийн дүр зураг + лого, 1200×630 (og-image.jpg;
+       эх: design-studio/jobs/2026-10-11_Unalaga_logo/site-og.mjs). Зураг солибол ?v=-г нэмэгдүүл (FB кэш). -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Уналага.мн">
   <meta property="og:locale" content="mn_MN">
   <meta property="og:title" content="Уналага.мн — тээвэр захиалах">
   <meta property="og:description" content="Хөдөө орон нутгийн тээвэр. Сул суудал, хоосон машиныг тээвэр хэрэгтэй хүнтэй холбоно — хүн, мал, бараа, гэр нүүлгэх.">
   <meta property="og:url" content="https://ghostshdee.github.io/unalaga/">
-  <meta property="og:image" content="https://ghostshdee.github.io/unalaga/og-image.jpg">
+  <meta property="og:image" content="https://ghostshdee.github.io/unalaga/og-image.jpg?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Уналага.мн — шөнийн тал нутаг, нар руу чиглэсэн зам">
+  <meta property="og:image:alt" content="Уналага.мн лого, «Хаашаа явах вэ?» — шөнийн тал нутаг, алтан зураастай зам">
   <meta name="twitter:card" content="summary_large_image">
 
-  <!-- Дүрс — hero-гийн санаа: нар руу нарийсах зам, алтан зураас.
-       data-URI тул нэмэлт хүсэлт үүсгэхгүй. -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230B2545'/><path d='M27 13h10l7 40H20z' fill='%23123A6B'/><path d='M31 19h2l0.8 7h-3.6zM30.2 30h3.6l1 9h-5.6zM29 43h6l1.2 10h-8.4z' fill='%23F5C518'/></svg>">
+  <!-- Дүрс — лого (DESIGN §15). 16px-д тасархай зураасгүй хувилбар. Жижиг файл (≤4 KB),
+       хуудсыг хүлээлгэдэггүй, нэг татаад бүх хуудсанд кэшээс. -->
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <!-- Фонт: Oswald (лого, чиглэлийн нэр, үнэ — замын тэмдгийн condensed),
        Onest (бусад бүх текст — кирилл сайн уншигдана) -->
@@ -85,7 +88,8 @@
 
   <!-- ═══════════════ HEADER ═══════════════ -->
   <header class="header">
-    <a class="logo" href="./">УНАЛАГА.МН</a>
+    <!-- Лого (DESIGN §15): тэмдэг нь marks3.js-ээс (site-mark.mjs), өнгө нь CSS-ээс -->
+    <a class="logo" href="./"><svg class="logo-mark" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="4.6" d="M9.4 9 h81.2 a6 6 0 0 1 6 6 v26.5 a8.5 8.5 0 0 0 0 17 v26.5 a6 6 0 0 1 -6 6 h-81.2 a6 6 0 0 1 -6 -6 v-26.5 a8.5 8.5 0 0 0 0 -17 v-26.5 a6 6 0 0 1 6 -6z"/><path d="M74 14.5 V85.5" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3.4" stroke-linecap="round"/><path transform="matrix(0.056 0 0 -0.056 18.61 75.36)" fill="currentColor" d="M53 -163V-40Q67 -41 79.5 -41.5Q92 -42 103 -42Q127 -42 146.5 -38.0Q166 -34 180.0 -25.5Q194 -17 201.5 -2.5Q209 12 209 33Q209 48 207.5 59.5Q206 71 204 82L22 810H188L258 477L291 260L315 478L374 810H542L376 65Q362 1 342.0 -43.5Q322 -88 293.0 -115.0Q264 -142 222.5 -154.0Q181 -166 122 -166Q107 -166 90.0 -165.0Q73 -164 53 -163Z"/><g transform="matrix(0.056 0 0 -0.056 18.61 75.36)" fill="none" class="cut-s" stroke-width="28.57" stroke-dasharray="60.71 60.71" stroke-linecap="round" stroke-linejoin="round"><path d="M105 795 L290 250"/><path d="M458 795 L290 250"/><path d="M290 250 L292 60 Q290 -60 230 -95 Q190 -104 120 -103 L66 -102"/></g><path fill="currentColor" d="M31.38 23.59 Q37.13 16.34 41.96 14.96 H46.56 Q51.39 16.34 57.14 23.59 Z"/><rect x="42.76" y="13.70" width="2.99" height="1.50" rx="0.46" fill="currentColor"/><path d="M36.67 21.17 Q44.26 18.87 51.85 21.17" fill="none" class="cut-s" stroke-width="0.74" stroke-linecap="round" opacity=".85"/><rect x="32.76" y="23.24" width="23.00" height="7.36" rx="0.34" fill="currentColor"/><path d="M33.91 26.33 H41.73 M46.79 26.33 H54.61" class="cut-s" stroke-width="0.69" stroke-linecap="round" opacity=".7"/><rect x="42.76" y="24.86" width="2.99" height="5.74" rx="0.34" class="cut-f"/></svg><span class="logo-word">УНАЛАГА<span class="logo-tld">.МН</span></span></a>
 
     <!-- Хайлт — компьютерт header дотор, мобайлд дэлгэц дүүрэн (DESIGN §8).
          .search-panel нь зөвхөн мобайлын дэлгэц дүүрэн үед харагдана. -->
@@ -101,7 +105,6 @@
         <p class="search-label">Түгээмэл газар</p>
         <div class="search-places" id="searchPlaces"></div>
         <p class="search-count" id="searchCount" aria-live="polite"></p>
-        <a class="search-link" href="drivers.html">Жолооч нарын жагсаалт</a>
         <button class="btn btn-primary search-done" type="submit">Зар харах</button>
       </div>
     </form>
@@ -122,7 +125,7 @@
     </div>
   </header>
 
-  <p class="demo-banner"><strong>Туршилтын хувилбар</strong> — зар жолооч нарт хүрэхгүй, зөвхөн энэ төхөөрөмжид хадгалагдана.</p>
+  <p class="demo-banner"><strong>Туршилтын хувилбар</strong> — жолооч шалгагдаагүй, өөрөө лавлаарай.</p>
 
   <div class="layout">
 
@@ -131,9 +134,7 @@
       <nav aria-label="Үндсэн цэс">
         <ul class="nav">
           <li><a class="nav-link is-active" href="./" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7"/><path d="M5.5 9.4V20h13V9.4"/></svg>Нүүр хуудас</a></li>
-          <li><a class="nav-link" href="drivers.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3.5v6M4.6 16l5.2-3M19.4 16l-5.2-3"/></svg>Жолооч хайх</a></li>
           <li><a class="nav-link" href="index.html#order" data-open-order><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>Захиалга өгөх</a></li>
-          <li><a class="nav-link" href="map.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Газрын зураг</a></li>
           <li><a class="nav-link" href="profile.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a></li>
         </ul>
       </nav>
@@ -226,7 +227,7 @@
       <!-- Хоосон үед юу хийхийг заана (DESIGN §7) -->
       <div class="feed-empty" id="feedEmpty" hidden>
         <p class="feed-empty-title">Энэ чиглэлд одоогоор зар алга.</p>
-        <p class="feed-empty-text">Туршилтын хувилбарт захиалга зөвхөн энэ төхөөрөмжид хадгалагдана.</p>
+        <p class="feed-empty-text">Та захиалга үүсгэвэл жолооч нар харах болно.</p>
         <div class="feed-empty-actions">
           <button class="btn btn-primary" type="button" data-open-order>Захиалга үүсгэх</button>
           <button class="btn btn-ghost" type="button" data-clear-filters>Шүүлтүүр арилгах</button>
@@ -285,8 +286,8 @@
               <div class="post-person">
                 <span class="person-avatar" aria-hidden="true">Б</span>
                 <div class="person-main">
-                  <p class="person-name"><a class="person-link" href="driver.html?id=bold-dorj">Болд Дорж</a> <span class="verified" title="Баталгаажсан (жишээ)" aria-label="Баталгаажсан (жишээ)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
-                  <p class="person-meta"><span class="rating">4.8</span> <span class="star" aria-hidden="true">★</span> · 124 аялал</p>
+                  <p class="person-name">Болд Дорж</p>
+                  <p class="person-meta">Жолооч</p>
                 </div>
               </div>
             </div>
@@ -355,8 +356,8 @@
               <div class="post-person">
                 <span class="person-avatar" aria-hidden="true">Б</span>
                 <div class="person-main">
-                  <p class="person-name"><a class="person-link" href="driver.html?id=bat-erdene">Бат-Эрдэнэ Энхбат</a> <span class="verified" title="Баталгаажсан (жишээ)" aria-label="Баталгаажсан (жишээ)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
-                  <p class="person-meta"><span class="rating">4.9</span> <span class="star" aria-hidden="true">★</span> · 45 аялал</p>
+                  <p class="person-name">Бат-Эрдэнэ Энхбат</p>
+                  <p class="person-meta">Жолооч</p>
                 </div>
               </div>
             </div>
@@ -424,8 +425,8 @@
               <div class="post-person">
                 <span class="person-avatar" aria-hidden="true">Г</span>
                 <div class="person-main">
-                  <p class="person-name"><a class="person-link" href="driver.html?id=ganbaatar">Ганбаатар Мөнх</a> <span class="verified" title="Баталгаажсан (жишээ)" aria-label="Баталгаажсан (жишээ)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span></p>
-                  <p class="person-meta"><span class="rating">4.7</span> <span class="star" aria-hidden="true">★</span> · 89 аялал</p>
+                  <p class="person-name">Ганбаатар Мөнх</p>
+                  <p class="person-meta">Жолооч</p>
                 </div>
               </div>
             </div>
@@ -493,8 +494,8 @@
               <div class="post-person">
                 <span class="person-avatar" aria-hidden="true">Э</span>
                 <div class="person-main">
-                  <p class="person-name"><a class="person-link" href="driver.html?id=enkhbayar">Энхбаяр Ууганбаяр</a></p>
-                  <p class="person-meta"><span class="rating">4.6</span> <span class="star" aria-hidden="true">★</span> · 31 аялал</p>
+                  <p class="person-name">Энхбаяр Ууганбаяр</p>
+                  <p class="person-meta">Жолооч</p>
                 </div>
               </div>
             </div>
@@ -528,7 +529,7 @@
               <div class="post-person">
                 <span class="person-avatar" aria-hidden="true">Э</span>
                 <div class="person-main">
-                  <p class="person-name"><a class="person-link" href="driver.html?id=erdenebat">Эрдэнэбат Сайнбаяр</a></p>
+                  <p class="person-name">Эрдэнэбат Сайнбаяр</p>
                   <p class="person-meta"><span class="chip-new">Шинэ гишүүн</span></p>
                 </div>
               </div>
@@ -551,7 +552,6 @@
     <a class="bnav-link is-active" href="./" aria-current="page"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7"/><path d="M5.5 9.4V20h13V9.4"/></svg>Нүүр</a>
     <button class="bnav-link" type="button" data-open-search><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m21 21-5.4-5.4"/></svg>Хайх</button>
     <button class="bnav-link bnav-order" type="button" data-open-order><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Захиалга</button>
-    <a class="bnav-link" href="map.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3.5 6.2v13.6L9 17.6l6 2.2 5.5-2.2V4L15 6.2 9 4Z"/><path d="M9 4v13.6M15 6.2v13.6"/></svg>Зураг</a>
     <a class="bnav-link" href="profile.html"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профайл</a>
   </nav>
 
@@ -714,40 +714,60 @@
         <div class="fld" data-driver-only>
           <label class="fld-label" for="fPrice">Үнэ</label>
           <div class="inp-money">
-            <input class="inp" id="fPrice" name="price" type="number" min="0" step="1000" placeholder="50000" inputmode="numeric">
+            <input class="inp" id="fPrice" name="price" type="number" min="0" max="10000000" step="1000" placeholder="50000" inputmode="numeric">
             <span class="inp-suffix" aria-hidden="true">₮</span>
           </div>
           <p class="fld-err" data-err-for="price" hidden></p>
         </div>
 
-        <!-- 7 · Машины зураг — зөвхөн жолооч -->
-        <div class="fld" data-driver-only>
-          <span class="fld-label">Машины зураг</span>
-          <label class="file-drop" for="fPhoto">
-            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5"/><path d="M12 15V4M8 7.5 12 3.5l4 4"/></svg>
-            <span class="file-text">Зураг сонгох</span>
-            <input class="sr-only" id="fPhoto" name="photo" type="file" accept="image/*">
-          </label>
-          <div class="file-preview" id="photoPreview" hidden>
-            <img alt="Сонгосон машины зураг">
-            <button class="file-clear" type="button" id="photoClear">Хасах</button>
-          </div>
-        </div>
-
-        <!-- 8 · Нэмэлт тэмдэглэл -->
+        <!-- 7 · Нэмэлт тэмдэглэл -->
         <div class="fld">
           <label class="fld-label" for="fNote">Нэмэлт тэмдэглэл</label>
-          <textarea class="inp" id="fNote" name="note" rows="3"
+          <textarea class="inp" id="fNote" name="note" rows="3" maxlength="500"
             placeholder="Жишээ: Орой хүртэл хүрнэ, ачаа авч болно, утсаар холбогдоно уу..."></textarea>
+        </div>
+
+        <!-- 8 · Холбоо барих. Утас зөвхөн шинэ зарт (data-new-only): засахад утас өөрчлөгдөхгүй -->
+        <fieldset class="fld">
+          <legend class="fld-label">Холбоо барих</legend>
+          <div class="fld-row">
+            <div class="fld-cell">
+              <label class="fld-sub" for="fName">Таны нэр</label>
+              <input class="inp" id="fName" name="name" type="text" maxlength="60" autocomplete="name" placeholder="Жишээ: Болд">
+              <p class="fld-err" data-err-for="name" hidden></p>
+            </div>
+            <div class="fld-cell" data-new-only>
+              <label class="fld-sub" for="fPhone">Утас</label>
+              <input class="inp" id="fPhone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="9" placeholder="0000-0000">
+              <p class="fld-err" data-err-for="phone" hidden></p>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 9 · Зөвшөөрөл (зөвхөн шинэ зарт). Тэмдэглээгүй бол «Нийтлэх» идэвхгүй -->
+        <div class="fld" data-new-only>
+          <label class="check">
+            <input type="checkbox" id="fConsent" name="consent">
+            <span>Нэр, утсаа сайт дээр бүх хүнд харуулахыг зөвшөөрч байна</span>
+          </label>
+          <p class="fld-note">Утас нь «Дугаар харах» дарсан хүнд л харагдана. <a href="privacy.html" target="_blank" rel="noopener">Нууцлалын тайлбар</a></p>
+          <p class="fld-note">Зараа засах, устгах эрх зөвхөн энэ хөтөч дээр хадгалагдана. Хөтчийн мэдээлэл цэвэрлэвэл алдагдана.</p>
+        </div>
+
+        <!-- Honeypot: хүнд харагдахгүй. Бөглөгдсөн бол bot — сервер зарыг нууж хадгална -->
+        <div class="hp-field" aria-hidden="true">
+          <label for="fHoneypot">Вэб хаяг (бүү бөглө)</label>
+          <input id="fHoneypot" name="hp_url" type="text" tabindex="-1" autocomplete="off">
         </div>
       </form>
 
       <footer class="modal-foot">
         <button class="btn btn-ghost" type="button" data-close>Болих</button>
-        <button class="btn btn-primary" type="submit" form="orderForm">Захиалга үүсгэх</button>
+        <button class="btn btn-primary" type="submit" form="orderForm" disabled>Нийтлэх</button>
       </footer>
     </div>
   </div>
+  <script src="db.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>
