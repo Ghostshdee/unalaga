@@ -2076,3 +2076,107 @@ body.is-locked { overflow: hidden; }
   margin: var(--space-1) 0 0;
   line-height: 1.6;
 }
+
+/* ═══════════════ САЙТ АШИГЛАХ ЗААВАР — нүүр хуудас (DESIGN §16) ═══════════════
+   YouTube Shorts-ийн lite embed. Эхлээд зөвхөн жижиг зураг; дарсны дараа л iframe ачаална.
+   Дарахаас өмнө мөр хэлбэр (зүүн зураг, баруун текст) — 9:16 бичлэг feed-ийг түлхэхгүй. */
+.guide {
+  max-width: 580px;
+  margin: 0 auto var(--space-6);
+}
+
+.guide-video {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.guide-poster {
+  position: relative;
+  display: block;
+  flex: 0 0 120px;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--chrome);   /* зураг ачаалагдахгүй байсан ч харагдана */
+}
+.guide-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* 4:3 зургийн хар зурвасыг тайрч 9:16 болгоно */
+}
+
+.guide-play {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--white);
+}
+.guide-play svg {
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;   /* гурвалжин нүдэнд төвд харагдана */
+  fill: currentColor;
+}
+.guide-poster:hover .guide-play { background: var(--blue-dark); }
+
+.guide-meta { min-width: 0; }
+.guide-meta .section-title {
+  font-size: var(--text-h2);
+  margin-bottom: var(--space-1);
+}
+.guide-sub {
+  margin-bottom: var(--space-3);
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+  line-height: 1.6;
+}
+
+/* Дарсны дараа: бичлэг 9:16 хэлбэрээр задарна (хэрэглэгчийн үйлдлийн хариу — §10) */
+.guide-video.is-open { flex-direction: column; align-items: center; }
+.guide-video.is-open .guide-meta { width: 100%; }
+.guide-video.is-open .guide-open { display: none; }
+.guide-player {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--chrome);
+}
+.guide-player iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.guide-steps {
+  margin: var(--space-4) 0 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .guide { margin-bottom: var(--space-5); }
+  .guide-poster { flex-basis: 96px; }
+  .guide-open { width: 100%; }
+}

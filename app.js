@@ -1620,3 +1620,59 @@ document.addEventListener('click', (e) => {
     showToast('Жишээ зар — холбогдох боломжгүй', null, true);
   }
 });
+
+/* «Сайт ашиглах заавар» — YouTube Shorts lite embed (DESIGN §16).
+   Дарахаас өмнө зөвхөн жижиг зураг; iframe (YouTube-ийн хүнд скрипттэй) дарсны дараа л үүснэ.
+   JS ажиллахгүй бол холбоос нь YouTube руу шууд орно. Бусад хуудсанд элемент байхгүй. */
+function initGuideVideo() {
+  const guide = document.getElementById('guide');
+  if (!guide || !guide.dataset.videoId) return;
+  const box = guide.querySelector('.guide-video');
+  const poster = guide.querySelector('.guide-poster');
+  if (!box || !poster) return;
+
+  /* Хулганаар ойртох, хүрэх, фокус орох үед холболтыг түрүүлж бэлдэнэ (нэг л удаа) */
+  let warmed = false;
+  function warmUp() {
+    if (warmed) return;
+    warmed = true;
+    const link = document.createElement('link');
+    link.rel = 'preconnect';
+    link.href = 'https://www.youtube-nocookie.com';
+    document.head.appendChild(link);
+  }
+  for (const trigger of guide.querySelectorAll('[data-guide-play]')) {
+    for (const type of ['pointerenter', 'touchstart', 'focus']) {
+      trigger.addEventListener(type, warmUp, { once: true, passive: true });
+    }
+  }
+
+  function play(e) {
+    e.preventDefault();
+    if (box.classList.contains('is-open')) return;
+    if (!navigator.onLine) {
+      showToast('Интернэтээ шалгаад дахин оролдоно уу', null, true);
+      return;
+    }
+    const frame = document.createElement('iframe');
+    /* Referrer хаавал YouTube «алдаа 153» өгдөг тул strict-origin-when-cross-origin */
+    frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(guide.dataset.videoId) +
+      '?autoplay=1&rel=0&playsinline=1';
+    frame.title = 'Сайт ашиглах зааврын бичлэг';
+    frame.loading = 'lazy';
+    frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    frame.allowFullscreen = true;
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+
+    const player = el('div', 'guide-player');
+    player.appendChild(frame);
+    poster.replaceWith(player);
+    box.classList.add('is-open');
+    frame.focus();
+  }
+
+  for (const trigger of guide.querySelectorAll('[data-guide-play]')) {
+    trigger.addEventListener('click', play);
+  }
+}
+document.addEventListener('DOMContentLoaded', initGuideVideo);
