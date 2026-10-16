@@ -138,10 +138,17 @@ function syncRoleUI() {
   const kind = document.querySelector('input[name="kind"]:checked');
   const k = kind ? kind.value : 'passenger';
   for (const block of document.querySelectorAll('#orderForm [data-kind]')) {
-    block.hidden = block.dataset.kind !== k;
+    block.hidden = !block.dataset.kind.split(' ').includes(k);
   }
   for (const node of document.querySelectorAll('#orderForm [data-driver-text]')) {
-    node.textContent = isDriver ? node.dataset.driverText : node.dataset.passengerText;
+    /* Дайвар: data-parcel-* үг байвал түрүүлж ашиглана (Бараа тээвэртэй блок хуваалцдаг) */
+    const parcelText = isDriver ? node.dataset.parcelDriverText : node.dataset.parcelPassengerText;
+    node.textContent = (k === 'parcel' && parcelText) ||
+      (isDriver ? node.dataset.driverText : node.dataset.passengerText);
+  }
+  for (const input of document.querySelectorAll('#orderForm [data-parcel-placeholder]')) {
+    if (!input.dataset.basePlaceholder) input.dataset.basePlaceholder = input.placeholder;
+    input.placeholder = k === 'parcel' ? input.dataset.parcelPlaceholder : input.dataset.basePlaceholder;
   }
 }
 
@@ -214,6 +221,8 @@ function validateForm() {
     simple.push([cargoKg, 'cargoKg']);
     if (!isDriver) simple.push([cargoWhat, 'cargoWhat']);   /* жолоочид заавал биш */
   }
+  /* Дайвар: кг заавал биш; юу явуулахыг зөвхөн илгээгч заавал бичнэ */
+  if (kind === 'parcel' && !isDriver) simple.push([cargoWhat, 'cargoWhat']);
   for (const pair of simple) {
     if (!String(pair[0].value).trim() || (pair[0].type === 'number' && Number(pair[0].value) <= 0)) {
       setFieldError(pair[0], pair[1], ERR_EMPTY);
@@ -605,6 +614,16 @@ function kindCapacity(post) {
     const kg = formatPrice(post.cargoKg).replace(' ₮', '') + ' кг' + (isDriver ? ' хүртэл' : '');
     return post.cargoWhat ? kg + ' · ' + post.cargoWhat : kg;
   }
+  if (post.kind === 'parcel') {
+    /* Үргэлж мөр буцаана: хоосон бол жолоочийн картанд «сул суудал» буруу зурагдана */
+    const parts = [isDriver ? 'Дайвар авна' : 'Дайвар явуулна'];
+    if (post.cargoWhat) parts.push(post.cargoWhat);
+    if (post.cargoKg) {
+      const kg = formatPrice(post.cargoKg).replace(' ₮', '') + ' кг';
+      parts.push(isDriver ? kg + ' хүртэл' : 'ойролцоогоор ' + kg);
+    }
+    return parts.join(' · ');
+  }
   if (post.kind === 'moving') {
     const parts = [post.gherFurniture ? 'Гэр, тавилгатай' : 'Гэр'];
     if (post.gherHelp) parts.push(isDriver ? 'туслах хүнтэй' : 'туслах хүн хэрэгтэй');
@@ -626,6 +645,7 @@ function readAdPayload(form) {
   const role = formRole(form);
   const isDriver = role === 'driver';
   const kind = kindOf(fd);
+  const hasCargo = kind === 'cargo' || kind === 'parcel';
   const car = isDriver ? profileCar() : null;
   const text = (key) => String(fd.get(key) || '').trim();
   const whole = (key) => { const n = Math.round(Number(fd.get(key))); return n > 0 ? n : null; };
@@ -639,8 +659,8 @@ function readAdPayload(form) {
     depart_time: fd.get('time') || null,
     seats: kind === 'passenger' ? (whole('seats') || 1) : null,
     livestock: kind === 'livestock' ? text('livestock') : null,
-    cargo_kg: kind === 'cargo' ? whole('cargoKg') : null,
-    cargo_what: kind === 'cargo' ? text('cargoWhat') : null,
+    cargo_kg: hasCargo ? whole('cargoKg') : null,
+    cargo_what: hasCargo ? text('cargoWhat') : null,
     gher_furniture: kind === 'moving' ? fd.get('gherFurniture') === 'on' : null,
     gher_help: kind === 'moving' ? fd.get('gherHelp') === 'on' : null,
     price: isDriver ? whole('price') : null,
@@ -897,6 +917,7 @@ const KIND_BADGE = {
   passenger: ['badge-passenger', 'Хүн тээвэр'],
   livestock: ['badge-livestock', 'Мал тээвэр'],
   cargo: ['badge-cargo', 'Бараа тээвэр'],
+  parcel: ['badge-parcel', 'Дайвар'],
   moving: ['badge-moving', 'Гэр нүүлгэх']
 };
 
@@ -1295,6 +1316,7 @@ document.addEventListener('DOMContentLoaded', loadPosts);
 const KIND_BY_BADGE = {
   'badge-livestock': 'livestock',
   'badge-cargo': 'cargo',
+  'badge-parcel': 'parcel',
   'badge-moving': 'moving',
   'badge-passenger': 'passenger'
 };

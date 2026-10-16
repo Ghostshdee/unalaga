@@ -72,6 +72,7 @@
   --badge-livestock: #7A5A1E;
   --badge-cargo:     #2F6B3D;
   --badge-moving:    #8C4A2F;
+  --badge-parcel:    #5B4A8A;   /* нил ягаан — цагаан дээр ~7.5:1 */
 
   /* ── Фонт (DESIGN §3) ───────────────────────────────────────
      Oswald  — condensed, замын тэмдгийн аяс. Зөвхөн лого, чиглэлийн нэр, үнэ, явах цаг.
@@ -152,6 +153,7 @@
   --badge-livestock: #D9B16A;
   --badge-cargo:     #7FCB8F;
   --badge-moving:    #E5A07F;
+  --badge-parcel:    #B9AEEA;   /* #0F2240 дээр ~7.8:1 */
 
   --ink-faint:  #8196B4;  /* #0F2240 дээр ~5.3:1 */
   --overlay:    rgba(2, 8, 20, 0.66);
@@ -784,6 +786,7 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 .badge-livestock { color: var(--badge-livestock); }
 .badge-cargo     { color: var(--badge-cargo); }
 .badge-moving    { color: var(--badge-moving); }
+.badge-parcel    { color: var(--badge-parcel); }
 
 /* Ганц үл хамаарах — захиалагчийн постыг ялгах дүүргэсэн улаан */
 .badge-request {
@@ -1675,6 +1678,13 @@ body.is-offline .main { padding-bottom: calc(var(--space-6) + 76px); }
   font-size: var(--text-small);
   color: var(--ink-muted);
 }
+/* Хариуцлагын анхааруулга (Бараа тээвэр, Дайвар) */
+.fld-warn {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--blue-wash);
+  color: var(--ink);
+}
 
 /* ── Оролтууд ── */
 .inp {
@@ -1716,6 +1726,8 @@ select.inp { appearance: none; background: var(--surface) var(--caret) no-repeat
 .pick { display: grid; gap: var(--space-2); }
 .pick-2 { grid-template-columns: 1fr 1fr; }
 .pick-grid { grid-template-columns: 1fr 1fr; }
+/* 5 карт: сүүлийнх ганцаараа үлдвэл бүтэн өргөнөөр */
+.pick-grid .pick-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 .pick-card {
   position: relative;

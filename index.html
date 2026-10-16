@@ -218,6 +218,7 @@
           <option value="passenger">Хүн тээвэр</option>
           <option value="livestock">Мал тээвэр</option>
           <option value="cargo">Бараа тээвэр</option>
+          <option value="parcel">Дайвар</option>
           <option value="moving">Гэр нүүлгэх</option>
         </select>
       </div>
@@ -620,6 +621,13 @@
               </span>
             </label>
             <label class="pick-card">
+              <input type="radio" name="kind" value="parcel">
+              <span class="pick-in">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="2"/><path d="M9 8V6.5A1.5 1.5 0 0 1 10.5 5h3A1.5 1.5 0 0 1 15 6.5V8"/><path d="M5 13h14"/></svg>
+                <b>Дайвар</b>
+              </span>
+            </label>
+            <label class="pick-card">
               <input type="radio" name="kind" value="moving">
               <span class="pick-in">
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4.5l8.5 6.5"/><path d="M5.5 9.6V20h13V9.6"/><path d="M10 20v-5h4v5"/></svg>
@@ -680,10 +688,11 @@
           <p class="fld-err" data-err-for="livestock" hidden></p>
         </div>
 
-        <div class="fld" data-kind="cargo" hidden>
+        <!-- Бараа тээвэр ба Дайвар нэг блок хуваалцана (ижил ID). Дайварт data-parcel-* үг давуу. -->
+        <div class="fld" data-kind="cargo parcel" hidden>
           <div class="fld-row">
             <div class="fld-cell">
-              <label class="fld-sub" for="fCargoKg" data-driver-text="Хэдэн кг хүртэл?" data-passenger-text="Жин">Хэдэн кг хүртэл?</label>
+              <label class="fld-sub" for="fCargoKg" data-driver-text="Хэдэн кг хүртэл?" data-passenger-text="Жин" data-parcel-driver-text="Ойролцоо хэдэн кг хүртэл? (заавал биш)" data-parcel-passenger-text="Ойролцоо жин, кг (заавал биш)">Хэдэн кг хүртэл?</label>
               <div class="inp-money">
                 <input class="inp" id="fCargoKg" name="cargoKg" type="number" min="1" max="50000" step="1" placeholder="500" inputmode="numeric">
                 <span class="inp-suffix" aria-hidden="true">кг</span>
@@ -691,11 +700,12 @@
               <p class="fld-err" data-err-for="cargoKg" hidden></p>
             </div>
             <div class="fld-cell">
-              <label class="fld-sub" for="fCargoWhat" data-driver-text="Ямар бараа (заавал биш)" data-passenger-text="Юу вэ?">Ямар бараа (заавал биш)</label>
-              <input class="inp" id="fCargoWhat" name="cargoWhat" type="text" maxlength="60" placeholder="Жишээ: Малын тэжээл">
+              <label class="fld-sub" for="fCargoWhat" data-driver-text="Ямар бараа (заавал биш)" data-passenger-text="Юу вэ?" data-parcel-driver-text="Ямар дайвар авах вэ? (заавал биш)" data-parcel-passenger-text="Юу явуулах вэ?">Ямар бараа (заавал биш)</label>
+              <input class="inp" id="fCargoWhat" name="cargoWhat" type="text" maxlength="60" placeholder="Жишээ: Малын тэжээл" data-parcel-placeholder="Жишээ: Баглаа, хайрцаг, бичиг баримт">
               <p class="fld-err" data-err-for="cargoWhat" hidden></p>
             </div>
           </div>
+          <p class="fld-note fld-warn" role="note">Уналага.мн зөвхөн холбодог. Ачааны аюулгүй байдал, төлбөрийг жолооч, илгээгч хоёр өөрсдөө тохиролцоно. Хууль бус, аюултай зүйл явуулахгүй.</p>
         </div>
 
         <fieldset class="fld" data-kind="moving" hidden>
