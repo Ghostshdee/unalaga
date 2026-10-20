@@ -319,7 +319,19 @@ function syncSubmit() {
   submit.disabled = formBusy || (!editing && !(consent && consent.checked));
 }
 
-function openModal() {
+/* Дайварын линкээр ирсэн хүн юм явуулах гэж байгаа — үүрэг нь Захиалагч */
+const DAYVAR_PRESET = { role: 'passenger', kind: 'parcel' };
+
+/* Хоосон төлөвийн товч: идэвхтэй төрлийн шүүлтүүрийг маягтад дамжуулна */
+function presetFromKindFilter() {
+  const select = document.getElementById('kindFilter');
+  const kind = select ? select.value : 'all';
+  if (kind === 'all') return undefined;
+  return kind === 'parcel' ? DAYVAR_PRESET : { kind };
+}
+
+/* preset = { role, kind } — зөвхөн шинэ зарын үед; засах горимд хэрэглэхгүй */
+function openModal(preset) {
   const modal = document.getElementById('orderModal');
   if (!modal) return;
 
@@ -345,6 +357,15 @@ function openModal() {
     const phone = document.getElementById('fPhone');
     if (!name.value && profile.name) name.value = profile.name;
     if (!phone.value && profile.phone) phone.value = formatPhone(profile.phone);
+
+    /* Дуудсан газрын сонголт профайлын үүргийг дарна (жишээ нь Дайвар → Захиалагч) */
+    if (preset) {
+      for (const field of ['role', 'kind']) {
+        const radio = preset[field] &&
+          form.querySelector('input[name="' + field + '"][value="' + preset[field] + '"]');
+        if (radio) radio.checked = true;
+      }
+    }
   }
 
   syncRoleUI();
@@ -406,7 +427,7 @@ function initModal() {
 
   /* Нээх — hero доторх товч */
   const opener = document.querySelector('.hero-cta');
-  if (opener) opener.addEventListener('click', openModal);
+  if (opener) opener.addEventListener('click', () => openModal());
 
   /* Хаах — ✕, Болих, overlay. Escape нь onModalKeydown дотор. */
   for (const el of modal.querySelectorAll('[data-close]')) {
@@ -433,6 +454,12 @@ function initModal() {
     openModal();
   }
 
+  /* Дайварын линк → index.html#dayvar — Захиалагч + Дайвар сонгосон маягт нээгдэнэ */
+  if (location.hash === '#dayvar') {
+    history.replaceState(null, '', location.pathname + location.search);
+    openModal(DAYVAR_PRESET);
+  }
+
   /* profile.html-ийн «Засах» → index.html#edit-<uuid> — бөглөсөн формтой нээнэ.
      Зар cache-д байвал шууд, үгүй бол жагсаалт ачаалж дууссаны дараа (openPendingEdit) */
   const editMatch = /^#edit-([0-9a-f-]{36})$/i.exec(location.hash);
@@ -446,7 +473,8 @@ function initModal() {
   for (const el of document.querySelectorAll('[data-open-order]')) {
     el.addEventListener('click', (e) => {
       e.preventDefault();   /* sidebar-ын <a href="index.html#order"> — хуудас дахин ачаалахгүй */
-      openModal();
+      /* Зөвхөн хоосон төлвийн товч шүүлтүүрийн төрлийг дамжуулна; доод цэс, sidebar өмнөх шигээ */
+      openModal(el.closest('#feedEmpty') ? presetFromKindFilter() : undefined);
     });
   }
 
