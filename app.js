@@ -1122,6 +1122,7 @@ function prependPost(post) {
   if (!list) return null;
   const card = createPost(post);
   list.insertBefore(card, list.firstElementChild);
+  applyFilters();   /* бодит зар орсон тул жишээ нуугдаж, тоо шинэчлэгдэнэ */
   /* «Тасалбар хэвлэгдэх» — зөвхөн нийтлэх үйлдлийн хариу (DESIGN §10), засахад биш */
   if (!reduceMotion()) {
     card.classList.add('is-printing');
@@ -1381,6 +1382,16 @@ function readFilters() {
   };
 }
 
+/* index.html-ийн статик «Жишээ зар» карт — серверийн зар биш, chip-sample-тэй */
+function isSampleCard(card) {
+  return !card.dataset.ad && !!card.querySelector('.chip-sample');
+}
+
+/* Серверээс ирсэн бодит зар (өөрийн зар ч) жагсаалтад нэг ч байна уу */
+function hasRemoteAds(list) {
+  return !!list.querySelector('.post-card[data-ad]');
+}
+
 /* Бүх картыг шүүж, тоо болон хоосон төлөвийг шинэчилнэ.
    Хайлтын үг бүр картад байх ёстой: «улаанбаатар хөвсгөл» → хоёулаа. */
 function applyFilters() {
@@ -1393,9 +1404,14 @@ function applyFilters() {
 
   const f = readFilters();
   const active = f.who !== 'all' || f.kind !== 'all' || f.words.length > 0;
+  const hideSamples = hasRemoteAds(list);   /* бодит зар нэг ч байвал жишээ зар бүгд нуугдана */
   let shown = 0;
 
   for (const card of list.querySelectorAll('.post-card')) {
+    if (hideSamples && isSampleCard(card)) {
+      card.hidden = true;   /* тоонд оруулахгүй */
+      continue;
+    }
     const info = cardInfo(card);
     const ok = (f.who === 'all' || info.who === f.who) &&
                (f.kind === 'all' || info.kind === f.kind) &&
@@ -1432,8 +1448,12 @@ function clearFilters() {
 function fillSearchPlaces() {
   const box = document.getElementById('searchPlaces');
   if (!box) return;
+  const feed = document.querySelector('.post-list:not(.profile-posts)');
+  const hideSamples = feed ? hasRemoteAds(feed) : false;
   const counts = {};
   for (const city of document.querySelectorAll('.post-list:not(.profile-posts) .route-city, .driver-list .driver-route-city, .driver-route-city')) {
+    const card = city.closest('.post-card');
+    if (hideSamples && card && isSampleCard(card)) continue;   /* нуугдсан жишээний хотыг санал болгохгүй */
     const name = city.textContent.trim();
     counts[name] = (counts[name] || 0) + 1;
   }
