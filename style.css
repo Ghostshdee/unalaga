@@ -1829,6 +1829,13 @@ select.inp { appearance: none; background: var(--surface) var(--caret) no-repeat
 }
 .btn-ghost:hover { background: var(--paper); }
 
+/* «Энэ бол жишээ зар» цонхны текст (BUILD §15) */
+.modal-text {
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
 /* Modal нээлттэй үед хуудас доогуураа гүйхгүй */
 body.is-locked { overflow: hidden; }
 @media (max-width: 640px) {
@@ -2026,6 +2033,10 @@ body.is-locked { overflow: hidden; }
   /* Хөл наалдаж, доод талд үргэлж харагдана */
   .modal-foot { position: sticky; bottom: 0; }
   .modal-foot .btn { flex: 1; }
+
+  /* Хоёр товч босоо: үндсэн нь дээр, нэр урт товч хоёр мөр болохгүй (BUILD §15) */
+  .modal-foot-stack { flex-direction: column; }
+  .modal-foot-stack .btn { flex: none; width: 100%; }
 }
 
 /* Нарийн утас (360px ба доош) — тасалбарын чиглэл, үнэ багтахын тулд */

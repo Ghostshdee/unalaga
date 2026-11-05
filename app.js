@@ -275,7 +275,9 @@ function clearErrorOnInput(e) {
 function trapFocus(e) {
   if (e.key !== 'Tab') return;
 
-  const sheet = document.querySelector('#orderModal .modal-sheet');
+  /* Нээлттэй байгаа аль ч цонх (нийтлэх маягт, «Энэ бол жишээ зар») */
+  const sheet = document.querySelector('.modal:not([hidden]) .modal-sheet');
+  if (!sheet) return;
   const sel = 'a[href], button:not([disabled]), input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])';
   const able = Array.from(sheet.querySelectorAll(sel)).filter((el) => el.offsetParent !== null);
   if (!able.length) return;
@@ -1656,6 +1658,106 @@ async function revealPhone(btn) {
   }
 }
 
+/* ── «Энэ бол жишээ зар» цонх (BUILD §15) ──
+   Жишээ зарын «Холбогдох» дарахад гарна. Эхний дарахад л JS-ээр үүсгэнэ —
+   5 HTML хуудсанд markup хуулахгүй. Фаз 3-т жишээ зарыг устгахад хамт хас. */
+const MESSENGER_URL = 'https://m.me/61594949025773';
+let sampleSheet = null;
+let sampleOpener = null;
+
+function onSampleKeydown(e) {
+  if (e.key === 'Escape') {
+    closeSampleSheet();
+    return;
+  }
+  trapFocus(e);
+}
+
+function buildSampleSheet() {
+  const root = el('div', 'modal');
+  root.id = 'sampleSheet';
+  root.hidden = true;
+
+  const overlay = el('div', 'modal-overlay');
+  overlay.dataset.close = '';
+
+  const sheet = el('div', 'modal-sheet');
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-labelledby', 'sampleTitle');
+  sheet.setAttribute('aria-describedby', 'sampleText');
+
+  const head = el('div', 'modal-head');
+  const title = el('h2', 'modal-title', 'Энэ бол жишээ зар');
+  title.id = 'sampleTitle';
+  const x = el('button', 'modal-x', '✕');
+  x.type = 'button';
+  x.setAttribute('aria-label', 'Хаах');
+  x.dataset.close = '';
+  head.append(title, x);
+
+  const body = el('div', 'modal-body');
+  const text = el('p', 'modal-text', 'УБ⇄Дархан явах гэж байна уу? Өөрийн зараа үнэгүй, бүртгэлгүй оруулаарай.');
+  text.id = 'sampleText';
+  body.appendChild(text);
+
+  const foot = el('div', 'modal-foot modal-foot-stack');
+  const post = el('button', 'btn btn-primary', 'Зар оруулах');
+  post.type = 'button';
+  post.dataset.samplePost = '';
+  const ask = el('a', 'btn btn-ghost', 'Messenger-ээр асуух');
+  ask.href = MESSENGER_URL;
+  ask.target = '_blank';
+  ask.rel = 'noopener';
+  foot.append(post, ask);
+
+  sheet.append(head, body, foot);
+  root.append(overlay, sheet);
+
+  root.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close]')) {
+      closeSampleSheet();
+    } else if (e.target.closest('[data-sample-post]')) {
+      startPostFromSample();
+    }
+  });
+  document.body.appendChild(root);
+  return root;
+}
+
+/* opener-ийг дарсан товчоос шууд авна: Safari/iOS дээр товч дарахад
+   document.activeElement товч болдоггүй тул фокус буцахгүй */
+function openSampleSheet(opener) {
+  if (sampleSheet && !sampleSheet.hidden) return;   /* давхар нээхгүй */
+  if (!sampleSheet) sampleSheet = buildSampleSheet();
+
+  sampleOpener = opener;
+  sampleSheet.hidden = false;
+  document.body.classList.add('is-locked');
+  document.addEventListener('keydown', onSampleKeydown);
+  sampleSheet.querySelector('.modal-x').focus();
+}
+
+function closeSampleSheet() {
+  if (!sampleSheet || sampleSheet.hidden) return;
+
+  sampleSheet.hidden = true;
+  document.body.classList.remove('is-locked');
+  document.removeEventListener('keydown', onSampleKeydown);
+
+  if (sampleOpener && document.contains(sampleOpener)) sampleOpener.focus();
+}
+
+/* [Зар оруулах]: нийтлэх маягт зөвхөн index.html-д байдаг */
+function startPostFromSample() {
+  if (document.getElementById('orderModal')) {
+    closeSampleSheet();   /* фокус «Холбогдох» руу буцна → маягт хаахад зөв буцна */
+    openModal();
+  } else {
+    location.href = 'index.html#order';
+  }
+}
+
 /* «Холбогдох» (жишээ зар) / «Дугаар харах» (серверийн зар). Нэг delegation нь
    бүх хуудас, динамикаар үүссэн картыг хамарна. */
 document.addEventListener('click', (e) => {
@@ -1664,9 +1766,8 @@ document.addEventListener('click', (e) => {
     revealPhone(phoneBtn);
     return;
   }
-  if (e.target.closest('.btn-contact:not(.btn-phone)')) {
-    showToast('Жишээ зар — холбогдох боломжгүй', null, true);
-  }
+  const contactBtn = e.target.closest('.btn-contact:not(.btn-phone)');
+  if (contactBtn) openSampleSheet(contactBtn);
 });
 
 /* «Сайт ашиглах заавар» — YouTube Shorts lite embed (DESIGN §16).
