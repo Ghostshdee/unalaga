@@ -1370,6 +1370,10 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 .map-wrap,
 .map-pick,
 .map-picked { max-width: 580px; margin-inline: auto; }
+.map-cards { display: grid; gap: var(--space-4); margin-top: var(--space-4); }
+.map-route-choice { white-space: normal; overflow-wrap: anywhere; text-align: left; min-height: 44px; }
+.map-route[role="button"] { cursor: pointer; }
+.map-route:focus-visible { outline: 2px solid var(--ink); }
 .map-wrap {
   padding: var(--space-3);
   border: 1px solid var(--line);
@@ -1380,6 +1384,9 @@ h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; }
 .map-land { fill: var(--blue-wash); stroke: var(--line-2); stroke-width: 3; stroke-linejoin: round; }
 .map-route { stroke: var(--link); stroke-opacity: 0.28; stroke-linecap: round; }
 .map-route.is-picked { stroke: var(--gold); stroke-opacity: 1; }
+.map-route-request { stroke: var(--red); stroke-dasharray: 10 8; }
+.map-picked .map-item { flex-wrap: wrap; }
+.map-picked .driver-route-city { overflow-wrap: anywhere; }
 .map-aimag { cursor: pointer; outline: none; }
 .map-hit { fill: transparent; }
 .map-dot { fill: var(--surface); stroke: var(--ink-muted); stroke-width: 3; }

@@ -452,8 +452,21 @@ function initModal() {
 
   /* drivers.html-ийн «Захиалга» → index.html#order — энд ирээд нээгдэнэ */
   if (location.hash === '#order') {
+    const params = new URLSearchParams(location.search);
     history.replaceState(null, '', location.pathname + location.search);
     openModal();
+    /* Зургаас ирсэн чиглэлийг л бөглөнө; нийтлэхийг хэрэглэгч шийднэ. */
+    for (const [key, id] of [['from', 'fFrom'], ['to', 'fTo']]) {
+      const value = (params.get(key) || '').trim();
+      if (!value) continue;
+      const select = document.getElementById(id);
+      if (!Array.from(select.options).some(option => option.value === value)) {
+        const option = el('option', null, value);
+        option.value = value;
+        select.appendChild(option);
+      }
+      select.value = value;
+    }
   }
 
   /* Дайварын линк → index.html#dayvar — Захиалагч + Дайвар сонгосон маягт нээгдэнэ */

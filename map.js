@@ -2,8 +2,8 @@
    Уналага.мн — map.js
    Чиглэлийн схем (Төлөвлөгөө Фаз 1.4). Бодит газрын зураг БИШ —
    22 аймгийн төвийг ойролцоо байрлалаар, жолоочийн чиглэлийг зураасаар.
-   Газрын зургийн сан (Leaflet) 2G/3G-д хүнд тул Фаз 6 хүртэл хэрэглэхгүй.
-   app.js, drivers.js, db.js-ийн ДАРАА ачаална (AIMAGS, DRIVERS, dbMyAdPosts, el).
+   Одоохондоо SVG схем; өгөгдлийн хэсгийг дараагийн зурагт ашиглана.
+   db.js, app.js-ийн ДАРАА ачаална (AIMAGS, el).
    ═══════════════════════════════════════════════════════════════════ */
 
 /* Аймгийн төвийн ойролцоо уртраг, өргөрөг (схемд хангалттай нарийвчлал) */
@@ -62,25 +62,28 @@ function svgEl(tag, attrs) {
   return node;
 }
 
-/* Чиглэлүүд: жолоочийн байнгын чиглэл + жолоочийн зар + миний зарууд.
-   Буцаах: { "А|Б": { a, b, drivers: Set, posts: n } } — А, Б үсгийн дарааллаар */
-function collectRoutes() {
+/* Бодит заруудыг дугаар, хугацаагаар шүүнэ. Чиг ба үүрэг тусдаа түлхүүртэй. */
+function collectRoutes(rows, now = Date.now()) {
   const routes = {};
-  const add = (from, to, driverId) => {
+  const ads = [], seen = new Set();
+  const add = (from, to, ad) => {
     const a = toAimag(from), b = toAimag(to);
     if (!a || !b || a === b) return;
-    const pair = [a, b].sort((x, y) => x.localeCompare(y, 'mn'));
-    const key = pair.join('|');
-    if (!routes[key]) routes[key] = { a: pair[0], b: pair[1], drivers: new Set(), posts: 0 };
-    if (driverId) routes[key].drivers.add(driverId);
-    else routes[key].posts++;
+    const key = JSON.stringify([a, b, ad.role]);
+    if (!routes[key]) routes[key] = { a, b, role: ad.role, ads: [] };
+    routes[key].ads.push(ad);
   };
-  for (const d of DRIVERS) {
-    for (const to of d.routes) add(d.home, to, d.id);
-    for (const p of d.posts) add(p.from, p.to, d.id);
+  for (const row of rows) {
+    if (!row || !row.id || seen.has(row.id)) continue;
+    seen.add(row.id);
+    const departure = Date.parse(row.depart_date + 'T' + (row.depart_time || '23:59:59') + '+08:00');
+    if (!Number.isFinite(departure) || departure < now || (row.status && row.status !== 'active')) continue;
+    const ad = { row, id: row.id, from: row.from_loc || '', to: row.to_loc || '', role: row.role,
+      a: toAimag(row.from_loc), b: toAimag(row.to_loc) };
+    ads.push(ad);
+    add(ad.from, ad.to, ad);
   }
-  for (const p of dbMyAdPosts()) add(p.from, p.to, null);
-  return routes;
+  return { ads, routes };
 }
 
 /* Аймаг бүрт хэдэн чиглэл холбогдсон */
@@ -107,12 +110,30 @@ function drawMap(svg, routes, onPick) {
     const r = routes[key];
     const [x1, y1] = project(AIMAG_LONLAT[r.a]);
     const [x2, y2] = project(AIMAG_LONLAT[r.b]);
-    const count = r.drivers.size + r.posts;
-    lines.appendChild(svgEl('line', {
-      class: 'map-route', x1, y1, x2, y2,
+    const count = r.ads.length;
+    /* Эсрэг чиглэлийн нумууд хоёр талд гарна. Үүргүүд ч давхцахгүй. */
+    const length = Math.hypot(x2 - x1, y2 - y1);
+    const bend = r.role === 'driver' ? 16 : 32;
+    const cx = (x1 + x2) / 2 - (y2 - y1) / length * bend;
+    const cy = (y1 + y2) / 2 + (x2 - x1) / length * bend;
+    const line = svgEl('path', {
+      class: 'map-route' + (r.role === 'driver' ? '' : ' map-route-request'),
+      d: `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`, fill: 'none',
       'data-a': r.a, 'data-b': r.b,
       'stroke-width': Math.min(10, 3 + count * 2)
-    }));
+    });
+    const title = svgEl('title', {});
+    title.textContent = r.a + ' → ' + r.b + ': ' + (r.role === 'driver' ? 'Жолооч' : 'Тээвэр хайгч') + ', ' + count + ' зар';
+    line.appendChild(title);
+    line.setAttribute('tabindex', '0');
+    line.setAttribute('role', 'button');
+    line.setAttribute('aria-label', title.textContent);
+    const choose = () => onPick(r.a, r.b);
+    line.addEventListener('click', choose);
+    line.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(); }
+    });
+    lines.appendChild(line);
   }
   svg.appendChild(lines);
 
@@ -141,8 +162,8 @@ function drawMap(svg, routes, onPick) {
   svg.appendChild(dots);
 }
 
-/* Сонгосон аймгийн жолооч, чиглэлийг схемийн доор харуулна */
-function renderPicked(name, routes) {
+/* Сонгосон аймгийн бодит зарыг чиг, үүрэгтэй нь жагсаана. */
+function renderPicked(name, data, quick, direction, onRoute) {
   const box = document.getElementById('mapPicked');
   box.textContent = '';
 
@@ -155,54 +176,130 @@ function renderPicked(name, routes) {
 
   const sel = document.getElementById('mapAimag');
   if (sel.value !== name) sel.value = name;
+  document.getElementById('mapTo').value = direction ? toAimag(direction.to) || '' : '';
 
-  const mine = Object.values(routes).filter((r) => r.a === name || r.b === name);
-  box.appendChild(el('h2', 'profile-h2', name));
+  const mine = data.ads.filter((ad) => direction
+    ? routeMatches(ad, direction.from, direction.to)
+    : quick
+    ? ((ad.a === 'Улаанбаатар' && ad.b === 'Дархан-Уул') || (ad.b === 'Улаанбаатар' && ad.a === 'Дархан-Уул'))
+    : (!name || ad.a === name || ad.b === name));
+  document.getElementById('mapCount').textContent = 'Сүүлийн 100 зараас: ' + mine.length + ' зар';
+  box.appendChild(el('h2', 'profile-h2', direction ? direction.from + ' → ' + direction.to : quick ? 'УБ ⇄ Дархан' : name || 'Бүх чиглэл'));
+
+  const add = el('a', 'btn btn-primary', 'Энэ чиглэлд зар оруулах');
+  add.href = orderRouteUrl(direction ? direction.from : name, direction ? direction.to : '');
+  box.appendChild(add);
 
   if (!mine.length) {
-    box.appendChild(el('p', 'profile-empty', 'Энэ аймаг руу явдаг жолооч одоогоор алга.'));
-    const a = el('a', 'btn btn-primary', 'Захиалга үүсгэх');
-    a.href = 'index.html#order';
-    box.appendChild(a);
+    box.appendChild(el('p', 'profile-empty', 'Энэ чиглэлд одоогоор зар алга. Та зар оруулбал жолооч, зорчигч харах болно.'));
     return;
   }
 
   const ul = el('ul', 'map-list');
   for (const r of mine) {
-    const other = r.a === name ? r.b : r.a;
     const li = el('li', 'map-item');
-    li.appendChild(el('span', 'driver-route-city', name + ' — ' + other));
-    const parts = [];
-    if (r.drivers.size) parts.push(r.drivers.size + ' жишээ жолооч');
-    if (r.posts) parts.push(r.posts + ' миний зар');
-    li.appendChild(el('span', 'map-item-meta', parts.join(' · ')));
+    li.dataset.adId = r.id;
+    const choose = el('button', 'btn btn-ghost map-route-choice', r.from + ' → ' + r.to);
+    choose.type = 'button';
+    choose.addEventListener('click', () => onRoute(r.from, r.to));
+    li.appendChild(choose);
+    li.appendChild(el('span', r.role === 'driver' ? 'badge badge-passenger' : 'badge badge-request',
+      r.role === 'driver' ? 'Жолооч' : 'Тээвэр хайгч'));
+    if (!r.a || !r.b || r.a === r.b) li.appendChild(el('span', 'map-item-meta', 'Схемд байрлуулаагүй'));
     ul.appendChild(li);
   }
   box.appendChild(ul);
+  const cards = el('div', 'map-cards');
+  for (const ad of mine) cards.appendChild(createPost(dbRowToPost(ad.row)));
+  box.appendChild(cards);
+}
+
+/* Мэдэгдэх аймгийн нэрийг нэгтгэнэ; бусад газрын бүтэн нэрийг хэвээр тааруулна. */
+function routeMatches(ad, from, to) {
+  return (ad.a || ad.from) === (toAimag(from) || from) &&
+    (ad.b || ad.to) === (toAimag(to) || to);
+}
+
+function orderRouteUrl(from, to) {
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  return 'index.html' + (params.size ? '?' + params : '') + '#order';
+}
+
+/* Өгөгдөл авах хэсэг SVG-ээс хамаарахгүй. */
+async function loadMapData() {
+  try {
+    const rows = await dbListAds();
+    const saved = writeAdsCache(rows);
+    return { ...collectRoutes(rows), state: 'ready', saved };
+  } catch (error) {
+    const cache = readAdsCache();
+    if (Number.isFinite(cache.savedAt) && cache.savedAt > 0) {
+      return { ...collectRoutes(cache.ads), state: 'stale', savedAt: cache.savedAt };
+    }
+    return { ...collectRoutes([]), state: 'error', error };
+  }
 }
 
 function initMap() {
   const svg = document.getElementById('mapSvg');
   if (!svg) return;
 
-  const routes = collectRoutes();
-  const pick = (name) => renderPicked(name, routes);
-  drawMap(svg, routes, pick);
+  const box = document.getElementById('mapPicked');
+  const notice = document.getElementById('mapStatus');
+  const count = document.getElementById('mapCount');
+  let data, quick = false, direction = null;
+  const pick = (name, to) => { quick = false; direction = to ? { from: name, to } : null; sel.value = name; render(); };
+  const pickRoute = (from, to) => { direction = { from, to }; quick = false; render(); };
 
   /* Жижиг дэлгэцэнд цэгт хуруу тааруулахад хэцүү — жагсаалтаас ч сонгоно */
   const sel = document.getElementById('mapAimag');
-  const weights = aimagWeights(routes);
+  const destination = document.getElementById('mapTo');
   for (const name of AIMAGS) {
-    const opt = el('option', null, name + (weights[name] ? ' (' + weights[name] + ')' : ''));
+    const opt = el('option', null, name);
     opt.value = name;
     sel.appendChild(opt);
+    const end = el('option', null, name);
+    end.value = name;
+    destination.appendChild(end);
   }
-  sel.addEventListener('change', () => { if (sel.value) pick(sel.value); });
-
-  document.getElementById('mapCount').textContent =
-    Object.keys(routes).length + ' чиглэл · ' + Object.keys(weights).length + ' аймаг';
-
-  pick('Улаанбаатар');
+  sel.addEventListener('change', () => pick(sel.value));
+  destination.addEventListener('change', () => {
+    if (sel.value && destination.value) pickRoute(sel.value, destination.value);
+    else pick(sel.value);
+  });
+  document.getElementById('mapQuick').addEventListener('click', () => { direction = null; quick = !quick; sel.value = ''; render(); });
+  function render() {
+    svg.textContent = '';
+    drawMap(svg, data.routes, pick);
+    document.getElementById('mapQuick').setAttribute('aria-pressed', String(quick));
+    box.textContent = ''; notice.textContent = '';
+    box.setAttribute('aria-busy', String(data.state === 'loading'));
+    if (data.state === 'loading') {
+      count.textContent = 'Зар ачаалж байна';
+      const skeleton = el('div', 'driver-skeleton', '');
+      skeleton.setAttribute('aria-hidden', 'true');
+      skeleton.appendChild(el('div', 'skel skel-line', ''));
+      box.appendChild(skeleton);
+      return;
+    }
+    if (data.state === 'error' || data.state === 'stale') {
+      notice.appendChild(el('p', null, data.state === 'stale'
+        ? 'Хуучин хадгалсан хуулбар: ' + Math.max(0, Math.floor((Date.now() - data.savedAt) / 60000)) + ' минутын өмнөх мэдээлэл. Одоогийн зар өөрчлөгдсөн байж болно.'
+        : dbErrorMessage(data.error, 'Зар татаж чадсангүй. Дахин оролдоно уу.')));
+      const retry = el('button', 'btn btn-ghost', 'Дахин оролдох');
+      retry.type = 'button'; retry.addEventListener('click', load);
+      notice.appendChild(retry);
+    } else if (!data.saved) notice.textContent = 'Энэ хөтөчид хуулбар хадгалж чадсангүй. Холболт тасарвал мэдээллийг дахин татах шаардлагатай.';
+    if (data.state === 'error') { count.textContent = 'Зарын тоо тодорхойгүй'; return; }
+    renderPicked(sel.value, data, quick, direction, pickRoute);
+  }
+  async function load() {
+    data = { ...collectRoutes([]), state: 'loading' }; render();
+    data = await loadMapData(); render();
+  }
+  load();
 }
 
 document.addEventListener('DOMContentLoaded', initMap);
